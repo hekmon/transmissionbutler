@@ -27,7 +27,7 @@ func butler(conf *butlerConfig, stopSignal <-chan struct{}, wg *sync.WaitGroup) 
 	}
 }
 
-var fields = []string{"id", "name", "status", "doneDate", "isFinished", "seedRatioLimit", "seedRatioMode", "uploadRatio"}
+var fields = []string{"id", "name", "status", "doneDate", "seedRatioLimit", "seedRatioMode", "uploadRatio"}
 
 const (
 	seedRatioModeGlobal  = int64(0)
@@ -111,8 +111,8 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent, conf *butlerConfig) (y
 			continue
 		}
 		// We can now safely access metadata
-		logger.Debugf("[Butler] Inspecting torrent %d:\n\tid: %d\n\tname: %s\n\tstatus: %d\n\tdoneDate: %v\n\tisFinished: %v\n\tseedRatioLimit: %f\n\tseedRatioMode: %d\n\tuploadRatio:%f",
-			index, *torrent.ID, *torrent.Name, *torrent.Status, *torrent.DoneDate, *torrent.IsFinished, *torrent.SeedRatioLimit, *torrent.SeedRatioMode, *torrent.UploadRatio)
+		logger.Debugf("[Butler] Inspecting torrent %d:\n\tid: %d\n\tname: %s\n\tstatus: %d\n\tdoneDate: %v\n\tseedRatioLimit: %f\n\tseedRatioMode: %d\n\tuploadRatio:%f",
+			index, *torrent.ID, *torrent.Name, *torrent.Status, *torrent.DoneDate, *torrent.SeedRatioLimit, *torrent.SeedRatioMode, *torrent.UploadRatio)
 		// Is this a custom torrent, should we left it alone ?
 		if *torrent.SeedRatioMode == seedRatioModeCustom {
 			logger.Infof("[Butler] Torent id %d (%s) has a custom ratio limit: considering it as custom (skipping)", *torrent.ID, *torrent.Name)
@@ -128,12 +128,12 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent, conf *butlerConfig) (y
 		} else {
 			// Torrent is over the free seed time
 			if *torrent.SeedRatioMode != seedRatioModeGlobal {
-				logger.Infof("[Butler] Torent id %d (%s) has now ended it's unlimited seed time: adding it to the regular ratio list", *torrent.ID, *torrent.Name)
+				logger.Infof("[Butler] Torent id %d (%s) is now over its unlimited seed period: adding it to the regular ratio list", *torrent.ID, *torrent.Name)
 				regularTorrents = append(regularTorrents, *torrent.ID)
 			}
 		}
 		// Does this torrent is finished ?
-		if *torrent.IsFinished {
+		if *torrent.Status == 0 && *torrent.UploadRatio >= conf.TargetRatio {
 			if conf.DeleteDone {
 				logger.Infof("[Butler] Torent id %d (%s) is finished (ratio %f): adding it to deletion list", *torrent.ID, *torrent.Name, *torrent.UploadRatio)
 				finishedTorrents = append(finishedTorrents, *torrent.ID)
@@ -164,10 +164,6 @@ func torrentOK(torrent *transmissionrpc.Torrent, index int) (ok bool) {
 	}
 	if torrent.DoneDate == nil {
 		logger.Warningf("[Butler] Encountered a nil torrent doneDate at index %d", index)
-		return
-	}
-	if torrent.IsFinished == nil {
-		logger.Warningf("[Butler] Encountered a nil torrent isFinished at index %d", index)
 		return
 	}
 	if torrent.SeedRatioLimit == nil {
