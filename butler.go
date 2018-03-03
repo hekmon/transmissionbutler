@@ -37,64 +37,64 @@ const (
 
 func butlerBatch(conf *butlerConfig) {
 	// Check that global ratio limit is activated and set with correct value
-	globalRatio(conf)
+	session, err := transmission.SessionArgumentsGet()
+	if err == nil {
+		globalRatio(session, conf)
+	} else {
+		logger.Errorf("[Butler] Can't check global ratio: can't get sessions values: %v", err)
+	}
 	// Get all torrents status
 	logger.Debug("[Butler] Fetching torrents' data")
 	torrents, err := transmission.TorrentGet(fields, nil)
-	if err != nil {
+	if err == nil {
+		logger.Infof("[Butler] Fetched %d torrent(s) metadata", len(torrents))
+		// Inspect each torrent
+		youngTorrents, regularTorrents, finishedTorrents := inspectTorrents(torrents, conf)
+		// Updates what need to be updated
+		updateYoungTorrents(youngTorrents)
+		updateRegularTorrents(regularTorrents)
+		deleteFinishedTorrents(finishedTorrents, session.DownloadDir)
+	} else {
 		logger.Errorf("[Butler] Can't retreive torrent(s): %v", err)
-		return
 	}
-	logger.Infof("[Butler] Fetched %d torrent(s) metadata", len(torrents))
-	// Inspect each torrent
-	youngTorrents, regularTorrents, finishedTorrents := inspectTorrents(torrents, conf)
-	// Updates what need to be updated
-	updateYoungTorrents(youngTorrents)
-	updateRegularTorrents(regularTorrents)
-	deleteFinishedTorrents(finishedTorrents)
 }
 
-func globalRatio(conf *butlerConfig) {
-	session, err := transmission.SessionArgumentsGet()
-	if err == nil {
-		var updateRatio, updateRatioEnabled bool
-		// Ratio value
-		if session.SeedRatioLimit != nil {
-			if *session.SeedRatioLimit != conf.TargetRatio {
-				logger.Infof("[Butler] Global ratio is invalid (%f instead of %f): scheduling update", *session.SeedRatioLimit, conf.TargetRatio)
-				updateRatio = true
-			} else {
-				logger.Debugf("[Butler] Session SeedRatioLimit: %v", *session.SeedRatioLimit)
-			}
+func globalRatio(session *transmissionrpc.SessionArguments, conf *butlerConfig) {
+	var updateRatio, updateRatioEnabled bool
+	// Ratio value
+	if session.SeedRatioLimit != nil {
+		if *session.SeedRatioLimit != conf.TargetRatio {
+			logger.Infof("[Butler] Global ratio is invalid (%f instead of %f): scheduling update", *session.SeedRatioLimit, conf.TargetRatio)
+			updateRatio = true
 		} else {
-			logger.Error("[Butler] Can't check global ratio value: SeedRatioLimit session value is nil")
-		}
-		// Global ratio enabled
-		if session.SeedRatioLimited != nil {
-			if !*session.SeedRatioLimited {
-				logger.Infof("[Butler] Global ratio is disabled: scheduling activation")
-				updateRatioEnabled = true
-			} else {
-				logger.Debugf("[Butler] Session SeedRatioLimited: %v", *session.SeedRatioLimited)
-			}
-		} else {
-			logger.Error("[Butler] Can't check global ratio value: SeedRatioLimited session value is nil")
-		}
-		// Update
-		if updateRatio || updateRatioEnabled {
-			updateRatioEnabled = true
-			err = transmission.SessionArgumentsSet(&transmissionrpc.SessionArguments{
-				SeedRatioLimit:   &conf.TargetRatio,
-				SeedRatioLimited: &updateRatioEnabled,
-			})
-			if err == nil {
-				logger.Infof("[Butler] Global ratio set and activated")
-			} else {
-				logger.Errorf("[Butler] Can't update global ratio: %v", err)
-			}
+			logger.Debugf("[Butler] Session SeedRatioLimit: %v", *session.SeedRatioLimit)
 		}
 	} else {
-		logger.Errorf("[Butler] Can't check global ratio: can't get sessions values: %v", err)
+		logger.Error("[Butler] Can't check global ratio value: SeedRatioLimit session value is nil")
+	}
+	// Global ratio enabled
+	if session.SeedRatioLimited != nil {
+		if !*session.SeedRatioLimited {
+			logger.Infof("[Butler] Global ratio is disabled: scheduling activation")
+			updateRatioEnabled = true
+		} else {
+			logger.Debugf("[Butler] Session SeedRatioLimited: %v", *session.SeedRatioLimited)
+		}
+	} else {
+		logger.Error("[Butler] Can't check global ratio value: SeedRatioLimited session value is nil")
+	}
+	// Update
+	if updateRatio || updateRatioEnabled {
+		updateRatioEnabled = true
+		err := transmission.SessionArgumentsSet(&transmissionrpc.SessionArguments{
+			SeedRatioLimit:   &conf.TargetRatio,
+			SeedRatioLimited: &updateRatioEnabled,
+		})
+		if err == nil {
+			logger.Infof("[Butler] Global ratio set and activated")
+		} else {
+			logger.Errorf("[Butler] Can't update global ratio: %v", err)
+		}
 	}
 }
 
@@ -211,8 +211,9 @@ func updateRegularTorrents(regularTorrents []int64) {
 	}
 }
 
-func deleteFinishedTorrents(finishedTorrents []int64) {
+func deleteFinishedTorrents(finishedTorrents []int64, dwnldDir *string) {
 	if len(finishedTorrents) > 0 {
+		// Delete
 		err := transmission.TorrentDelete(&transmissionrpc.TorrentDeletePayload{
 			IDs:             finishedTorrents,
 			DeleteLocalData: true,
@@ -221,6 +222,17 @@ func deleteFinishedTorrents(finishedTorrents []int64) {
 			logger.Errorf("[Butler] Can't delete the %d finished torrent(s): %v", len(finishedTorrents), err)
 		} else {
 			logger.Infof("[Butler] Successfully deleted the %d finished torrent(s)", len(finishedTorrents))
+		}
+		// Fetch free space
+		if dwnldDir != nil {
+			var sizeBytes int64
+			if sizeBytes, err = transmission.FreeSpace(*dwnldDir); err == nil {
+				logger.Infof("[Butler] Remaing free space in download dir: %dGB", sizeBytes/1024/1024/1024)
+			} else {
+				logger.Errorf("[Butler] Can't check free space in download dir: %v", err)
+			}
+		} else {
+			logger.Warning("[Butler] Can't fetch free space: session dwld dir is nil")
 		}
 	}
 }
