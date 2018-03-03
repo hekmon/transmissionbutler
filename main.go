@@ -46,11 +46,14 @@ func main() {
 			UserAgent: "github.com/hekmon/transmissionbutler",
 		})
 	// Start butler
-	////TODO
+	stopSignal := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go butler(conf.Butler.CheckFrequency, stopSignal, &wg)
 	// Handles system signals properly
 	var mainStop sync.Mutex
 	mainStop.Lock()
-	go handleSignals(&mainStop)
+	go handleSignals(stopSignal, &wg, &mainStop)
 	// Wait butler's clean stop before exiting main goroutine
 	mainStop.Lock()
 	logger.Debug("[Main] main goroutine stopping")

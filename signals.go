@@ -7,7 +7,7 @@ import (
 	"syscall"
 )
 
-func handleSignals(mainStop *sync.Mutex) {
+func handleSignals(butlerSignal chan<- struct{}, butlerStopped *sync.WaitGroup, mainStop *sync.Mutex) {
 	// If we exit, allow main goroutine to do so
 	defer mainStop.Unlock()
 	// Register signals
@@ -22,14 +22,12 @@ func handleSignals(mainStop *sync.Mutex) {
 			fallthrough
 		case syscall.SIGINT:
 			logger.Infof("[Main] Signal '%v' caught: cleaning up before exiting", sig)
-			stopButler()
+			close(butlerSignal)
+			logger.Debug("[Main] Stop signal sent to butler, waiting for its goroutine to finish")
+			butlerStopped.Wait()
 			break
 		default:
 			logger.Warningf("[Main] Signal '%v' caught but no process set to handle it: skipping", sig)
 		}
 	}
-}
-
-func stopButler() {
-
 }
