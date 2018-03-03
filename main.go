@@ -32,12 +32,17 @@ func main() {
 	default:
 		logger = hllogger.New(os.Stdout, "", hllogger.Info, 0)
 	}
+	logger.Output(" ")
+	logger.Output(" * Transsmission Butler *")
+	logger.Output(" ")
 	// Load config
 	var conf *config
 	var err error
+	logger.Debug("[Main] Loading configuration")
 	if conf, err = getConfig(*confFile); err != nil {
 		logger.Fatalf(1, "can't load config: %v", err)
 	}
+	logger.Debugf("[Main] Loaded configuration:\n%+v", conf)
 	// Init transmission client
 	transmission = transmissionrpc.New(conf.Server.Host, conf.Server.User, conf.Server.Password,
 		&transmissionrpc.AdvancedConfig{
@@ -49,12 +54,14 @@ func main() {
 	stopSignal := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Add(1)
+	logger.Debug("[Main] Starting butler")
 	go butler(conf.Butler.CheckFrequency, stopSignal, &wg)
 	// Handles system signals properly
 	var mainStop sync.Mutex
 	mainStop.Lock()
+	logger.Debug("[Main] Starting signal handling goroutine")
 	go handleSignals(stopSignal, &wg, &mainStop)
 	// Wait butler's clean stop before exiting main goroutine
 	mainStop.Lock()
-	logger.Debug("[Main] main goroutine stopping")
+	logger.Info("[Main] Exiting")
 }

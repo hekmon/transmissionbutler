@@ -22,10 +22,11 @@ func handleSignals(butlerSignal chan<- struct{}, butlerStopped *sync.WaitGroup, 
 			fallthrough
 		case syscall.SIGINT:
 			logger.Infof("[Main] Signal '%v' caught: cleaning up before exiting", sig)
-			close(butlerSignal)
+			butlerSignal <- struct{}{}
 			logger.Debug("[Main] Stop signal sent to butler, waiting for its goroutine to finish")
 			butlerStopped.Wait()
-			break
+			logger.Debug("[Main] butler has stopped, unlocking main goroutine to exit")
+			return
 		default:
 			logger.Warningf("[Main] Signal '%v' caught but no process set to handle it: skipping", sig)
 		}

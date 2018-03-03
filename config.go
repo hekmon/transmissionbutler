@@ -16,7 +16,7 @@ func getConfig(filename string) (conf *config, err error) {
 	}
 	defer configFile.Close()
 	// Parse it
-	if err = json.NewDecoder(configFile).Decode(conf); err != nil {
+	if err = json.NewDecoder(configFile).Decode(&conf); err != nil {
 		err = fmt.Errorf("can't decode '%s' as JSON: %v", filename, err)
 		return
 	}
@@ -62,7 +62,13 @@ type butlerConfig struct {
 }
 
 func (bc *butlerConfig) UnmarshalJSON(data []byte) (err error) {
-	if err = json.Unmarshal(data, bc); err == nil {
+	type rawButlerConfig butlerConfig
+	tmp := &struct {
+		*rawButlerConfig
+	}{
+		rawButlerConfig: (*rawButlerConfig)(bc),
+	}
+	if err = json.Unmarshal(data, tmp); err == nil {
 		bc.CheckFrequency *= time.Minute
 	}
 	return
