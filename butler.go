@@ -37,7 +37,42 @@ const (
 
 func butlerBatch(conf *butlerConfig) {
 	// Check that global ratio limit is activated and set with correct value
-	//// TODO
+	session, err := transmission.SessionArgumentsGet()
+	if err == nil {
+		var updateRatio, updateRatioEnabled bool
+		// Ratio value
+		if session.SeedRatioLimit != nil {
+			if *session.SeedRatioLimit != conf.TargetRatio {
+				logger.Infof("[Butler] Global ratio is invalid (%f instead of %f): scheduling update", *session.SeedRatioLimit, conf.TargetRatio)
+				updateRatio = true
+			}
+		} else {
+			logger.Error("[Butler] Can't check global ratio value: SeedRatioLimit session value is nil")
+		}
+		// Global ratio enabled
+		if session.SeedRatioLimited != nil {
+			if !*session.SeedRatioLimited {
+				logger.Infof("[Butler] Global ratio is disabled: scheduling activation")
+				updateRatioEnabled = true
+			}
+		} else {
+			logger.Error("[Butler] Can't check global ratio value: SeedRatioLimited session value is nil")
+		}
+		// Update
+		if updateRatio || updateRatioEnabled {
+			err = transmission.SessionArgumentsSet(&transmissionrpc.SessionArguments{
+				SeedRatioLimit:   &conf.TargetRatio,
+				SeedRatioLimited: &updateRatioEnabled,
+			})
+			if err == nil {
+				logger.Infof("[Butler] Global ratio set and activated")
+			} else {
+				logger.Errorf("[Butler] Can't update global ratio: %v", err)
+			}
+		}
+	} else {
+		logger.Errorf("[Butler] Can't check global ratio: can't get sessions values: %v", err)
+	}
 	// Get all torrents status
 	logger.Debug("[Butler] Fetching torrents' data")
 	torrents, err := transmission.TorrentGet(fields, nil)
