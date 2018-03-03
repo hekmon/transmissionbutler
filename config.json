@@ -1,0 +1,15 @@
+{
+    "server": {
+        "host": "127.0.0.1",
+        "port": 9090,
+        "https": false,
+        "user": "rpcuser",
+        "password": "rpcpassword"
+    },
+    "butler": {
+        "check_frequency_minutes": 30,
+        "unlimited_seed_days": 90,
+        "target_ratio": 3,
+        "delete_when_done": true
+    }
+}
