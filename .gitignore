@@ -1,0 +1,6 @@
+# VSCode local settings
+.vscode/
+
+# Dev
+config_dev.json
+transmissionbutler
