@@ -33,8 +33,8 @@ func main() {
 		logger = hllogger.New(os.Stdout, "", hllogger.Info, 0)
 	}
 	logger.Output(" ")
-	logger.Output("  Transsmission Butler")
-	logger.Output(" **********************")
+	logger.Output(" • Transmission Butler •")
+	logger.Output("      ヽ(　￣д￣)ノ")
 	logger.Output(" ")
 	// Load config
 	var err error
