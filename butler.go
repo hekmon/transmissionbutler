@@ -37,6 +37,24 @@ const (
 
 func butlerBatch(conf *butlerConfig) {
 	// Check that global ratio limit is activated and set with correct value
+	globalRatio(conf)
+	// Get all torrents status
+	logger.Debug("[Butler] Fetching torrents' data")
+	torrents, err := transmission.TorrentGet(fields, nil)
+	if err != nil {
+		logger.Errorf("[Butler] Can't retreive torrent(s): %v", err)
+		return
+	}
+	logger.Infof("[Butler] Fetched %d torrent(s) metadata", len(torrents))
+	// Inspect each torrent
+	youngTorrents, regularTorrents, finishedTorrents := inspectTorrents(torrents, conf)
+	// Updates what need to be updated
+	updateYoungTorrents(youngTorrents)
+	updateRegularTorrents(regularTorrents)
+	deleteFinishedTorrents(finishedTorrents)
+}
+
+func globalRatio(conf *butlerConfig) {
 	session, err := transmission.SessionArgumentsGet()
 	if err == nil {
 		var updateRatio, updateRatioEnabled bool
@@ -73,19 +91,15 @@ func butlerBatch(conf *butlerConfig) {
 	} else {
 		logger.Errorf("[Butler] Can't check global ratio: can't get sessions values: %v", err)
 	}
-	// Get all torrents status
-	logger.Debug("[Butler] Fetching torrents' data")
-	torrents, err := transmission.TorrentGet(fields, nil)
-	if err != nil {
-		logger.Errorf("[Butler] Can't retreive torrent(s): %v", err)
-		return
-	}
-	logger.Infof("[Butler] Fetched %d torrent(s) metadata", len(torrents))
-	// Inspect each torrent
+}
+
+func inspectTorrents(torrents []*transmissionrpc.Torrent, conf *butlerConfig) (youngTorrents, regularTorrents, finishedTorrents []int64) {
+	// Prepare
+	youngTorrents = make([]int64, 0, len(torrents))
+	regularTorrents = make([]int64, 0, len(torrents))
+	finishedTorrents = make([]int64, 0, len(torrents))
 	now := time.Now()
-	youngTorrents := make([]int64, 0, len(torrents))
-	regularTorrents := make([]int64, 0, len(torrents))
-	finishedTorrents := make([]int64, 0, len(torrents))
+	// Start inspection
 	for index, torrent := range torrents {
 		// Checks
 		if !torrentOK(torrent, index) {
@@ -123,44 +137,7 @@ func butlerBatch(conf *butlerConfig) {
 			}
 		}
 	}
-	// Switch to unlimited seed young torrents
-	if len(youngTorrents) > 0 {
-		seedRatioMode := seedRatioModeNoRatio
-		err = transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
-			IDs:           youngTorrents,
-			SeedRatioMode: &seedRatioMode,
-		})
-		if err != nil {
-			logger.Errorf("[Butler] Can't apply no ratio mutator to the %d young torrent(s): %v", len(youngTorrents), err)
-		} else {
-			logger.Infof("[Butler] Successfully applied the no ratio mutator to the %d young torrent(s)", len(youngTorrents))
-		}
-	}
-	// Switch to global ratio mode regular torrents
-	if len(regularTorrents) > 0 {
-		seedRatioMode := seedRatioModeGlobal
-		err = transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
-			IDs:           regularTorrents,
-			SeedRatioMode: &seedRatioMode,
-		})
-		if err != nil {
-			logger.Errorf("[Butler] Can't apply global ratio mutator to the %d regular torrent(s): %v", len(regularTorrents), err)
-		} else {
-			logger.Infof("[Butler] Successfully applied the global ratio mutator to the %d regular torrent(s)", len(regularTorrents))
-		}
-	}
-	// Delete finished torrents
-	if len(finishedTorrents) > 0 {
-		err = transmission.TorrentDelete(&transmissionrpc.TorrentDeletePayload{
-			IDs:             finishedTorrents,
-			DeleteLocalData: true,
-		})
-		if err != nil {
-			logger.Errorf("[Butler] Can't delete the %d finished torrent(s): %v", len(finishedTorrents), err)
-		} else {
-			logger.Infof("[Butler] Successfully deleted the %d finished torrent(s)", len(finishedTorrents))
-		}
-	}
+	return
 }
 
 func torrentOK(torrent *transmissionrpc.Torrent, index int) (ok bool) {
@@ -201,4 +178,48 @@ func torrentOK(torrent *transmissionrpc.Torrent, index int) (ok bool) {
 		return
 	}
 	return true
+}
+
+func updateYoungTorrents(youngTorrents []int64) {
+	if len(youngTorrents) > 0 {
+		seedRatioMode := seedRatioModeNoRatio
+		err := transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
+			IDs:           youngTorrents,
+			SeedRatioMode: &seedRatioMode,
+		})
+		if err != nil {
+			logger.Errorf("[Butler] Can't apply no ratio mutator to the %d young torrent(s): %v", len(youngTorrents), err)
+		} else {
+			logger.Infof("[Butler] Successfully applied the no ratio mutator to the %d young torrent(s)", len(youngTorrents))
+		}
+	}
+}
+
+func updateRegularTorrents(regularTorrents []int64) {
+	if len(regularTorrents) > 0 {
+		seedRatioMode := seedRatioModeGlobal
+		err := transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
+			IDs:           regularTorrents,
+			SeedRatioMode: &seedRatioMode,
+		})
+		if err != nil {
+			logger.Errorf("[Butler] Can't apply global ratio mutator to the %d regular torrent(s): %v", len(regularTorrents), err)
+		} else {
+			logger.Infof("[Butler] Successfully applied the global ratio mutator to the %d regular torrent(s)", len(regularTorrents))
+		}
+	}
+}
+
+func deleteFinishedTorrents(finishedTorrents []int64) {
+	if len(finishedTorrents) > 0 {
+		err := transmission.TorrentDelete(&transmissionrpc.TorrentDeletePayload{
+			IDs:             finishedTorrents,
+			DeleteLocalData: true,
+		})
+		if err != nil {
+			logger.Errorf("[Butler] Can't delete the %d finished torrent(s): %v", len(finishedTorrents), err)
+		} else {
+			logger.Infof("[Butler] Successfully deleted the %d finished torrent(s)", len(finishedTorrents))
+		}
+	}
 }
