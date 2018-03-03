@@ -27,12 +27,13 @@ func butler(conf *butlerConfig, stopSignal <-chan struct{}, wg *sync.WaitGroup) 
 	}
 }
 
-var fields = []string{"id", "name", "doneDate", "isFinished", "seedRatioLimit", "seedRatioMode", "uploadRatio"}
+var fields = []string{"id", "name", "status", "doneDate", "isFinished", "seedRatioLimit", "seedRatioMode", "uploadRatio"}
 
-// seedRatioMode
-//  0 : global limit
-//	1 : custom limit
-//	2 : no ratio limit
+const (
+	seedRatioModeGlobal  = int64(0)
+	seedRatioModeCustom  = int64(1)
+	seedRatioModeNoRatio = int64(2)
+)
 
 func butlerBatch(conf *butlerConfig) {
 	// Check that global ratio limit is activated and set with correct value
@@ -46,6 +47,9 @@ func butlerBatch(conf *butlerConfig) {
 	}
 	logger.Infof("[Butler] Fetched %d torrent(s) metadata", len(torrents))
 	// Inspect each torrent
+	now := time.Now()
+	youngTorrents := make([]int64, 0, len(torrents))
+	regularTorrents := make([]int64, 0, len(torrents))
 	finishedTorrents := make([]int64, 0, len(torrents))
 	for index, torrent := range torrents {
 		// Checks
@@ -53,15 +57,27 @@ func butlerBatch(conf *butlerConfig) {
 			continue
 		}
 		// We can now safely access metadata
-		logger.Debugf("[Butler] Inspecting torrent %d:\n\tid: %d\n\tname: %s\n\tdoneDate: %v\n\tisFinished: %v\n\tseedRatioLimit: %f\n\tseedRatioMode: %d\n\tuploadRatio:%f",
-			index, *torrent.ID, *torrent.Name, *torrent.DoneDate, *torrent.IsFinished, *torrent.SeedRatioLimit, *torrent.SeedRatioMode, *torrent.UploadRatio)
+		logger.Debugf("[Butler] Inspecting torrent %d:\n\tid: %d\n\tname: %s\n\tstatus: %d\n\tdoneDate: %v\n\tisFinished: %v\n\tseedRatioLimit: %f\n\tseedRatioMode: %d\n\tuploadRatio:%f",
+			index, *torrent.ID, *torrent.Name, *torrent.Status, *torrent.DoneDate, *torrent.IsFinished, *torrent.SeedRatioLimit, *torrent.SeedRatioMode, *torrent.UploadRatio)
 		// Is this a custom torrent, should we left it alone ?
-		if *torrent.SeedRatioMode == 1 {
+		if *torrent.SeedRatioMode == seedRatioModeCustom {
 			logger.Infof("[Butler] Torent id %d (%s) has a custom ratio limit: considering it as custom (skipping)", *torrent.ID, *torrent.Name)
 			continue
 		}
 		// Does this torrent is under/over the free seed time range ?
-		//// TODO
+		if torrent.DoneDate.Add(conf.UnlimitedSeed).After(now) {
+			// Torrent is still within the free seed time
+			if *torrent.SeedRatioMode != seedRatioModeNoRatio {
+				logger.Infof("[Butler] Torent id %d (%s) is still young: adding it to the unlimited seed ratio list", *torrent.ID, *torrent.Name)
+				youngTorrents = append(youngTorrents, *torrent.ID)
+			}
+		} else {
+			// Torrent is over the free seed time
+			if *torrent.SeedRatioMode != seedRatioModeGlobal {
+				logger.Infof("[Butler] Torent id %d (%s) has now ended it's unlimited seed time: adding it to the regular ratio list", *torrent.ID, *torrent.Name)
+				regularTorrents = append(regularTorrents, *torrent.ID)
+			}
+		}
 		// Does this torrent is finished ?
 		if *torrent.IsFinished {
 			if conf.DeleteDone {
@@ -72,8 +88,34 @@ func butlerBatch(conf *butlerConfig) {
 			}
 		}
 	}
+	// Switch to unlimited seed young torrents
+	if len(youngTorrents) > 0 {
+		seedRatioMode := seedRatioModeNoRatio
+		err = transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
+			IDs:           youngTorrents,
+			SeedRatioMode: &seedRatioMode,
+		})
+		if err != nil {
+			logger.Errorf("[Butler] Can't apply no ratio mutator to the %d young torrent(s): %v", len(youngTorrents), err)
+		} else {
+			logger.Infof("[Butler] Successfully applied the no ratio mutator to the %d young torrent(s)", len(youngTorrents))
+		}
+	}
+	// Switch to global ratio mode regular torrents
+	if len(regularTorrents) > 0 {
+		seedRatioMode := seedRatioModeGlobal
+		err = transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
+			IDs:           regularTorrents,
+			SeedRatioMode: &seedRatioMode,
+		})
+		if err != nil {
+			logger.Errorf("[Butler] Can't apply global ratio mutator to the %d regular torrent(s): %v", len(regularTorrents), err)
+		} else {
+			logger.Infof("[Butler] Successfully applied the global ratio mutator to the %d regular torrent(s)", len(regularTorrents))
+		}
+	}
 	// Delete finished torrents
-	if conf.DeleteDone {
+	if len(finishedTorrents) > 0 {
 		err = transmission.TorrentDelete(&transmissionrpc.TorrentDeletePayload{
 			IDs:             finishedTorrents,
 			DeleteLocalData: true,
@@ -81,7 +123,7 @@ func butlerBatch(conf *butlerConfig) {
 		if err != nil {
 			logger.Errorf("[Butler] Can't delete the %d finished torrent(s): %v", len(finishedTorrents), err)
 		} else {
-			logger.Errorf("[Butler] Successfully deleted the %d finished torrent(s)", len(finishedTorrents))
+			logger.Infof("[Butler] Successfully deleted the %d finished torrent(s)", len(finishedTorrents))
 		}
 	}
 }
@@ -97,6 +139,10 @@ func torrentOK(torrent *transmissionrpc.Torrent, index int) (ok bool) {
 	}
 	if torrent.Name == nil {
 		logger.Warningf("[Butler] Encountered a nil torrent name at index %d", index)
+		return
+	}
+	if torrent.Status == nil {
+		logger.Warningf("[Butler] Encountered a nil torrent status at index %d", index)
 		return
 	}
 	if torrent.DoneDate == nil {
