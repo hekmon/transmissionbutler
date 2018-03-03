@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"sync"
 
 	"github.com/hekmon/hllogger"
 	"github.com/hekmon/transmissionrpc"
@@ -44,4 +45,13 @@ func main() {
 			Port:      conf.Server.Port,
 			UserAgent: "github.com/hekmon/transmissionbutler",
 		})
+	// Start butler
+	////TODO
+	// Handles system signals properly
+	var mainStop sync.Mutex
+	mainStop.Lock()
+	go handleSignals(&mainStop)
+	// Wait butler's clean stop before exiting main goroutine
+	mainStop.Lock()
+	logger.Debug("[Main] main goroutine stopping")
 }
