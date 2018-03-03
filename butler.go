@@ -63,6 +63,8 @@ func globalRatio(conf *butlerConfig) {
 			if *session.SeedRatioLimit != conf.TargetRatio {
 				logger.Infof("[Butler] Global ratio is invalid (%f instead of %f): scheduling update", *session.SeedRatioLimit, conf.TargetRatio)
 				updateRatio = true
+			} else {
+				logger.Debugf("[Butler] Session SeedRatioLimit: %v", *session.SeedRatioLimit)
 			}
 		} else {
 			logger.Error("[Butler] Can't check global ratio value: SeedRatioLimit session value is nil")
@@ -72,12 +74,15 @@ func globalRatio(conf *butlerConfig) {
 			if !*session.SeedRatioLimited {
 				logger.Infof("[Butler] Global ratio is disabled: scheduling activation")
 				updateRatioEnabled = true
+			} else {
+				logger.Debugf("[Butler] Session SeedRatioLimited: %v", *session.SeedRatioLimited)
 			}
 		} else {
 			logger.Error("[Butler] Can't check global ratio value: SeedRatioLimited session value is nil")
 		}
 		// Update
 		if updateRatio || updateRatioEnabled {
+			updateRatioEnabled = true
 			err = transmission.SessionArgumentsSet(&transmissionrpc.SessionArguments{
 				SeedRatioLimit:   &conf.TargetRatio,
 				SeedRatioLimited: &updateRatioEnabled,
