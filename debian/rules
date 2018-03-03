@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+# Dir vars
+DEBIAN_DIR = $(CURDIR)/debian
+
+%:
+	dh $@ --with systemd
+
+override_dh_auto_clean:
+	rm -rf $(GOPATH)/bin/* $(GOPATH)/pkg/*
+	cd $(GOPATH)/src && find * -name '*.go' -exec dirname {} \; | xargs -n1 go clean
+
+override_dh_auto_build:
+	echo $(PATH)
+	go build -v -a -ldflags "-s -w"
+
+# override_dh_auto_test:
+# 	go test -v
+
+override_dh_usrlocal:
+
+override_dh_systemd_start:
+	dh_systemd_start  --no-start --restart-after-upgrade --name=transmissionbutler
+override_dh_systemd_enable:
+	dh_systemd_enable --name=transmissionbutler
+
+clean:
+	-rm -r ${GOPATH}/src/transmissionbutler/transmissionbutler
+	-rm ${DEBIAN_DIR}/transmissionbutler.debhelper.log
+	-rm ${DEBIAN_DIR}/transmissionbutler.postinst.debhelper
+	-rm ${DEBIAN_DIR}/transmissionbutler.postrm.debhelper
+	-rm ${DEBIAN_DIR}/transmissionbutler.prerm.debhelper
+	-rm ${DEBIAN_DIR}/transmissionbutler.substvars
+	-rm ${DEBIAN_DIR}/files

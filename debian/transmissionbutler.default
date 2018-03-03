@@ -1,0 +1,3 @@
+# transmissionbutler default configuration
+CONFIG=/etc/transmissionbutler/config.json
+LOGLEVEL=1

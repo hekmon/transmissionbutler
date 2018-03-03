@@ -1,0 +1,11 @@
+Source: transmissionbutler
+Maintainer: Edouard Hur <edouardhur@gmail.com>
+Build-Depends: debhelper (>= 9),
+               dh-systemd,
+
+Package: transmissionbutler
+Architecture: amd64
+Pre-Depends: dpkg (>= 1.16.1)
+Depends: adduser
+Homepage: https://github.com/hekmon/transmissionbutler
+Description: Automagically manages your torrents seed life

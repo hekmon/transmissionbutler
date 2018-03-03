@@ -1,0 +1,12 @@
+[Unit]
+Description=transmissionbutler
+After=network.target
+
+[Service]
+User=transmissionbutler
+EnvironmentFile=/etc/default/transmissionbutler
+ExecStart=/usr/bin/transmissionbutler -conf $CONFIG -loglevel $LOGLEVEL
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

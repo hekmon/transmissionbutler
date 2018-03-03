@@ -1,0 +1,5 @@
+To compile the binary with a custom GO env setup, the following command will be needed :
+
+    debuild --preserve-envvar PATH --preserve-envvar GOROOT -us -uc
+
+As for GOPATH, it is set automatically in the 'rules' file prior execution.

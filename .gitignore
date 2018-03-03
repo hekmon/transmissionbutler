@@ -4,3 +4,13 @@
 # Dev
 config_dev.json
 transmissionbutler
+
+# Debian package
+transmissionbutler
+config.json
+debian/files
+debian/transmissionbutler/
+debian/transmissionbutler.substvars
+debian/transmissionbutler.debhelper.log
+debian/transmissionbutler.*.debhelper
+debian/debhelper-build-stamp
