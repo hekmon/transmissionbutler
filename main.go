@@ -36,8 +36,8 @@ func main() {
 	logger.Output(" * Transsmission Butler *")
 	logger.Output(" ")
 	// Load config
-	var conf *config
 	var err error
+	var conf *config
 	logger.Debug("[Main] Loading configuration")
 	if conf, err = getConfig(*confFile); err != nil {
 		logger.Fatalf(1, "can't load config: %v", err)
@@ -55,7 +55,7 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	logger.Debug("[Main] Starting butler")
-	go butler(conf.Butler.CheckFrequency, stopSignal, &wg)
+	go butler(&conf.Butler, stopSignal, &wg)
 	// Handles system signals properly
 	var mainStop sync.Mutex
 	mainStop.Lock()

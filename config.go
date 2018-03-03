@@ -57,7 +57,7 @@ type serverConfig struct {
 type butlerConfig struct {
 	CheckFrequency time.Duration `json:"check_frequency_minutes"`
 	UnlimitedSeed  uint          `json:"unlimited_seed_days"`
-	TargetRatio    float32       `json:"target_ratio"`
+	TargetRatio    float64       `json:"target_ratio"`
 	DeleteDone     bool          `json:"delete_when_done"`
 }
 
