@@ -33,12 +33,13 @@ func main() {
 		logger = hllogger.New(os.Stdout, "", hllogger.Info, 0)
 	}
 	logger.Output(" ")
-	logger.Output(" * Transsmission Butler *")
+	logger.Output("  Transsmission Butler")
+	logger.Output(" **********************")
 	logger.Output(" ")
 	// Load config
 	var err error
 	var conf *config
-	logger.Debug("[Main] Loading configuration")
+	logger.Info("[Main] Loading configuration")
 	if conf, err = getConfig(*confFile); err != nil {
 		logger.Fatalf(1, "can't load config: %v", err)
 	}
@@ -54,7 +55,7 @@ func main() {
 	stopSignal := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Add(1)
-	logger.Debug("[Main] Starting butler")
+	logger.Info("[Main] Starting butler")
 	go butler(&conf.Butler, stopSignal, &wg)
 	// Handles system signals properly
 	var mainStop sync.Mutex
