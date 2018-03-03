@@ -51,6 +51,18 @@ func main() {
 			Port:      conf.Server.Port,
 			UserAgent: "github.com/hekmon/transmissionbutler",
 		})
+	ok, serverVersion, serverMinimumVersion, err := transmission.RPCVersion()
+	if err != nil {
+		logger.Errorf("[Main] Can't check remote transmission RPC version: %v", err)
+	} else {
+		if ok {
+			logger.Infof("[Main] Remote transmission RPC version (v%d) is compatible with our transmissionrpc library (v%d)",
+				serverVersion, transmissionrpc.RPCVersion)
+		} else {
+			logger.Fatalf(2, "[Main] Remote transmission RPC version (v%d) is incompatible with the transmission library (v%d): remote needs at least v%d",
+				serverVersion, transmissionrpc.RPCVersion, serverMinimumVersion)
+		}
+	}
 	// Start butler
 	stopSignal := make(chan struct{})
 	var wg sync.WaitGroup
