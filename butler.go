@@ -111,8 +111,10 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent, conf *butlerConfig) (y
 			continue
 		}
 		// We can now safely access metadata
-		logger.Debugf("[Butler] Inspecting torrent %d:\n\tid: %d\n\tname: %s\n\tstatus: %d\n\tdoneDate: %v\n\tseedRatioLimit: %f\n\tseedRatioMode: %d\n\tuploadRatio:%f",
-			index, *torrent.ID, *torrent.Name, *torrent.Status, *torrent.DoneDate, *torrent.SeedRatioLimit, *torrent.SeedRatioMode, *torrent.UploadRatio)
+		if logger.IsDebugShown() {
+			logger.Debugf("[Butler] Inspecting torrent %d:\n\tid: %d\n\tname: %s\n\tstatus: %d\n\tdoneDate: %v\n\tseedRatioLimit: %f\n\tseedRatioMode: %d\n\tuploadRatio:%f",
+				index, *torrent.ID, *torrent.Name, *torrent.Status, *torrent.DoneDate, *torrent.SeedRatioLimit, *torrent.SeedRatioMode, *torrent.UploadRatio)
+		}
 		// Is this a custom torrent, should we left it alone ?
 		if *torrent.SeedRatioMode == seedRatioModeCustom {
 			logger.Infof("[Butler] Torent id %d (%s) has a custom ratio limit: considering it as custom (skipping)", *torrent.ID, *torrent.Name)
