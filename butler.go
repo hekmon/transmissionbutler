@@ -119,7 +119,7 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent, conf *butlerConfig) (y
 		if *torrent.Status == 6 {
 			// Is this a custom torrent, should we leave it alone ?
 			if *torrent.SeedRatioMode == seedRatioModeCustom {
-				logger.Infof("[Butler] Torent id %d (%s) has a custom ratio limit: skipping", *torrent.ID, *torrent.Name)
+				logger.Infof("[Butler] Torent id %d (%s) has a custom ratio enabled: skipping", *torrent.ID, *torrent.Name)
 				continue
 			}
 			// Does this torrent is under/over the free seed time range ?
