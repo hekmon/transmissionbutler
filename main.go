@@ -15,7 +15,7 @@ var transmission *transmissionrpc.Client
 func main() {
 	// Parse flags
 	logLevelFlag := flag.Int("loglevel", 1, "Set loglevel: Debug(0) Info(1) Warning(2) Error(3) Fatal(4). Default Info.")
-	confFile := flag.String("conf", "/etc/transmissionbutler/config.json", "Relative or absolute path to the json configuration file")
+	confFile := flag.String("conf", "config.json", "Relative or absolute path to the json configuration file")
 	flag.Parse()
 	// Init logger
 	switch *logLevelFlag {

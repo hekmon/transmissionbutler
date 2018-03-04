@@ -7,7 +7,7 @@
         "password": "rpcpassword"
     },
     "butler": {
-        "check_frequency_minutes": 30,
+        "check_frequency_minutes": 60,
         "unlimited_seed_days": 90,
         "target_ratio": 3,
         "delete_when_done": true
