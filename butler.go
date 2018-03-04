@@ -8,9 +8,9 @@ import (
 )
 
 func butler(conf *butlerConfig, stopSignal <-chan struct{}, wg *sync.WaitGroup) {
-	logger.Infof("[Butler] Will work every %v", conf.CheckFrequency)
 	defer wg.Done()
 	// Create the ticker
+	logger.Infof("[Butler] Will work every %v", conf.CheckFrequency)
 	tick := time.NewTicker(conf.CheckFrequency)
 	defer tick.Stop()
 	// Start first batch
