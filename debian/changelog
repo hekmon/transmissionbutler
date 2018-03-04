@@ -1,3 +1,7 @@
+transmissionbutler (1.0.1) jessie; urgency=medium
+  * only compute seeding time for seeding torrents
+ -- Edouard Hur <edouardhur@gmail.com>  Sun, 04 Mar 2018 02:13:04 +0100
+
 transmissionbutler (1.0.0) jessie; urgency=medium
   * Initial release.
  -- Edouard Hur <edouardhur@gmail.com>  Sun, 04 Mar 2018 00:37:35 +0100
