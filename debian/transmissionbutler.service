@@ -1,6 +1,6 @@
 [Unit]
 Description=transmissionbutler
-After=network.target
+After=network.target transmission-daemon.service
 
 [Service]
 User=transmissionbutler
