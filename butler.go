@@ -229,7 +229,7 @@ func deleteFinishedTorrents(finishedTorrents []int64, dwnldDir *string) {
 		if dwnldDir != nil {
 			var sizeBytes int64
 			if sizeBytes, err = transmission.FreeSpace(*dwnldDir); err == nil {
-				logger.Infof("[Butler] Remaing free space in download dir: %dGB", sizeBytes/1024/1024/1024)
+				logger.Infof("[Butler] Remaing free space in download dir: %fGB", float64(sizeBytes)/1024/1024/1024)
 			} else {
 				logger.Errorf("[Butler] Can't check free space in download dir: %v", err)
 			}
