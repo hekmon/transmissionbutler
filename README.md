@@ -31,6 +31,8 @@ Automagically manages your torrents seed life !
 
 ## Build / Install
 
+Check the [releases](https://github.com/hekmon/transmissionbutler/releases) page !
+
 ### Simple / Trying out
 
 ```bash
