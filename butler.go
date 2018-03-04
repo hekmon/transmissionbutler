@@ -115,23 +115,26 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent, conf *butlerConfig) (y
 			logger.Debugf("[Butler] Inspecting torrent %d:\n\tid: %d\n\tname: %s\n\tstatus: %d\n\tdoneDate: %v\n\tseedRatioLimit: %f\n\tseedRatioMode: %d\n\tuploadRatio:%f",
 				index, *torrent.ID, *torrent.Name, *torrent.Status, *torrent.DoneDate, *torrent.SeedRatioLimit, *torrent.SeedRatioMode, *torrent.UploadRatio)
 		}
-		// Is this a custom torrent, should we leave it alone ?
-		if *torrent.SeedRatioMode == seedRatioModeCustom {
-			logger.Infof("[Butler] Torent id %d (%s) has a custom ratio limit: skipping", *torrent.ID, *torrent.Name)
-			continue
-		}
-		// Does this torrent is under/over the free seed time range ?
-		if torrent.DoneDate.Add(conf.UnlimitedSeed).After(now) {
-			// Torrent is still within the unlimited seed time range
-			if *torrent.SeedRatioMode != seedRatioModeNoRatio {
-				logger.Infof("[Butler] Torent id %d (%s) is still young: adding it to the unlimited seed ratio list", *torrent.ID, *torrent.Name)
-				youngTorrents = append(youngTorrents, *torrent.ID)
+		// For seeding torrents
+		if *torrent.Status == 6 {
+			// Is this a custom torrent, should we leave it alone ?
+			if *torrent.SeedRatioMode == seedRatioModeCustom {
+				logger.Infof("[Butler] Torent id %d (%s) has a custom ratio limit: skipping", *torrent.ID, *torrent.Name)
+				continue
 			}
-		} else {
-			// Torrent is over the unlimited seed time range
-			if *torrent.SeedRatioMode != seedRatioModeGlobal {
-				logger.Infof("[Butler] Torent id %d (%s) is now over its unlimited seed period: adding it to the regular ratio list", *torrent.ID, *torrent.Name)
-				regularTorrents = append(regularTorrents, *torrent.ID)
+			// Does this torrent is under/over the free seed time range ?
+			if torrent.DoneDate.Add(conf.UnlimitedSeed).After(now) {
+				// Torrent is still within the unlimited seed time range
+				if *torrent.SeedRatioMode != seedRatioModeNoRatio {
+					logger.Infof("[Butler] Torent id %d (%s) is still young: adding it to the unlimited seed ratio list", *torrent.ID, *torrent.Name)
+					youngTorrents = append(youngTorrents, *torrent.ID)
+				}
+			} else {
+				// Torrent is over the unlimited seed time range
+				if *torrent.SeedRatioMode != seedRatioModeGlobal {
+					logger.Infof("[Butler] Torent id %d (%s) is now over its unlimited seed period: adding it to the regular ratio list", *torrent.ID, *torrent.Name)
+					regularTorrents = append(regularTorrents, *torrent.ID)
+				}
 			}
 		}
 		// Is this torrent finished ?
