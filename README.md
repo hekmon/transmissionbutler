@@ -49,7 +49,7 @@ Check the [releases](https://github.com/hekmon/transmissionbutler/releases) page
 ```bash
 # Build
 go get -u github.com/hekmon/transmissionbutler
-cd "$GOPATH/github.com/hekmon/transmissionbutler"
+cd "$GOPATH/src/github.com/hekmon/transmissionbutler"
 go install
 # Configure
 vim config.json
@@ -65,7 +65,7 @@ vim config.json
 ```bash
 go get -u github.com/hekmon/transmissionbutler
 apt install -y --no-install-recommends debhelper build-essential dh-systemd
-cd "$GOPATH/github.com/hekmon/transmissionbutler"
+cd "$GOPATH/src/github.com/hekmon/transmissionbutler"
 debuild --preserve-envvar PATH --preserve-envvar GOROOT -us -u
 ```
 
@@ -73,7 +73,7 @@ debuild --preserve-envvar PATH --preserve-envvar GOROOT -us -u
 
 ```bash
 go get -u github.com/hekmon/transmissionbutler
-cd "$GOPATH/github.com/hekmon/transmissionbutler"
+cd "$GOPATH/src/github.com/hekmon/transmissionbutler"
 docker build -t go-debian-builder debian/go-debian-builder
 docker run --rm -v "$GOPATH/src":/go/src -w /go/src/github.com/hekmon/transmissionbutler go-debian-builder dpkg-buildpackage -us -uc -b
 ```
