@@ -1,3 +1,7 @@
+transmissionbutler (1.1.0) jessie; urgency=medium
+  * be smarter about stopped/finished torrents before deleting them (differentiate global/custom/no ratio cases)
+ -- Edouard Hur <edouardhur@gmail.com>  Mon, 05 Mar 2018 13:16:05 +0100
+
 transmissionbutler (1.0.1) jessie; urgency=medium
   * only compute seeding time for seeding torrents
  -- Edouard Hur <edouardhur@gmail.com>  Sun, 04 Mar 2018 02:13:04 +0100
