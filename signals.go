@@ -19,7 +19,7 @@ func handleSignals(butlerSignal chan<- struct{}, butlerStopped *sync.WaitGroup, 
 		sig = <-signalChannel
 		switch sig {
 		case syscall.SIGUSR1:
-			logger.Infof("[Main] Signal '%v' caught: forcing the butler to run now")
+			logger.Infof("[Main] Signal '%v' caught: forcing the butler to run now", sig)
 			go butlerBatch()
 		case syscall.SIGTERM:
 			fallthrough
