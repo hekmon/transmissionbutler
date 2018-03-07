@@ -7,19 +7,19 @@ import (
 	"github.com/hekmon/transmissionrpc"
 )
 
-func butler(conf *butlerConfig, stopSignal <-chan struct{}, wg *sync.WaitGroup) {
+func butler(stopSignal <-chan struct{}, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// Create the ticker
-	logger.Infof("[Butler] Will work every %v", conf.CheckFrequency)
-	tick := time.NewTicker(conf.CheckFrequency)
+	logger.Infof("[Butler] Will work every %v", conf.Butler.CheckFrequency)
+	tick := time.NewTicker(conf.Butler.CheckFrequency)
 	defer tick.Stop()
 	// Start first batch
-	butlerBatch(conf)
+	butlerBatch()
 	// Wait for ticks or cancellation
 	for {
 		select {
 		case <-tick.C:
-			butlerBatch(conf)
+			butlerBatch()
 		case <-stopSignal:
 			logger.Debug("[Butler] stop signal received")
 			return
@@ -35,12 +35,12 @@ const (
 	seedRatioModeNoRatio = int64(2)
 )
 
-func butlerBatch(conf *butlerConfig) {
+func butlerBatch() {
 	// Check that global ratio limit is activated and set with correct value
 	logger.Debug("[Butler] Fetching session data")
 	session, err := transmission.SessionArgumentsGet()
 	if err == nil {
-		globalRatio(session, conf)
+		globalRatio(session)
 	} else {
 		logger.Errorf("[Butler] Can't check global ratio: can't get sessions values: %v", err)
 	}
@@ -53,19 +53,20 @@ func butlerBatch(conf *butlerConfig) {
 	}
 	logger.Infof("[Butler] Fetched %d torrent(s) metadata", len(torrents))
 	// Inspect each torrent
-	youngTorrents, regularTorrents, finishedTorrents := inspectTorrents(torrents, conf)
+	youngTorrents, regularTorrents, finishedTorrents := inspectTorrents(torrents)
 	// Updates what need to be updated
 	updateYoungTorrents(youngTorrents)
 	updateRegularTorrents(regularTorrents)
 	deleteFinishedTorrents(finishedTorrents, session.DownloadDir)
 }
 
-func globalRatio(session *transmissionrpc.SessionArguments, conf *butlerConfig) {
+func globalRatio(session *transmissionrpc.SessionArguments) {
 	var updateRatio, updateRatioEnabled bool
 	// Ratio value
 	if session.SeedRatioLimit != nil {
-		if *session.SeedRatioLimit != conf.TargetRatio {
-			logger.Infof("[Butler] Global ratio is invalid (%f instead of %f): scheduling update", *session.SeedRatioLimit, conf.TargetRatio)
+		if *session.SeedRatioLimit != conf.Butler.TargetRatio {
+			logger.Infof("[Butler] Global ratio is invalid (%f instead of %f): scheduling update",
+				*session.SeedRatioLimit, conf.Butler.TargetRatio)
 			updateRatio = true
 		} else {
 			logger.Debugf("[Butler] Session SeedRatioLimit: %v", *session.SeedRatioLimit)
@@ -88,7 +89,7 @@ func globalRatio(session *transmissionrpc.SessionArguments, conf *butlerConfig) 
 	if updateRatio || updateRatioEnabled {
 		updateRatioEnabled = true
 		err := transmission.SessionArgumentsSet(&transmissionrpc.SessionArguments{
-			SeedRatioLimit:   &conf.TargetRatio,
+			SeedRatioLimit:   &conf.Butler.TargetRatio,
 			SeedRatioLimited: &updateRatioEnabled,
 		})
 		if err == nil {
@@ -99,7 +100,7 @@ func globalRatio(session *transmissionrpc.SessionArguments, conf *butlerConfig) 
 	}
 }
 
-func inspectTorrents(torrents []*transmissionrpc.Torrent, conf *butlerConfig) (youngTorrents, regularTorrents, finishedTorrents []int64) {
+func inspectTorrents(torrents []*transmissionrpc.Torrent) (youngTorrents, regularTorrents, finishedTorrents []int64) {
 	// Prepare
 	youngTorrents = make([]int64, 0, len(torrents))
 	regularTorrents = make([]int64, 0, len(torrents))
@@ -125,7 +126,7 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent, conf *butlerConfig) (y
 				continue
 			}
 			// Does this torrent is under/over the free seed time range ?
-			if torrent.DoneDate.Add(conf.UnlimitedSeed).After(now) {
+			if torrent.DoneDate.Add(conf.Butler.UnlimitedSeed).After(now) {
 				// Torrent is still within the unlimited seed time range
 				if *torrent.SeedRatioMode != seedRatioModeNoRatio {
 					logger.Infof("[Butler] Seeding torrent id %d (%s) is still young: adding it to the unlimited seed ratio list",
@@ -142,12 +143,12 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent, conf *butlerConfig) (y
 			}
 		}
 		// For stopped/finished torrents
-		if conf.DeleteDone && *torrent.Status == 0 {
+		if conf.Butler.DeleteDone && *torrent.Status == 0 {
 			// Should we handle this stopped torrent ?
 			if *torrent.SeedRatioMode == seedRatioModeCustom {
 				targetRatio = *torrent.SeedRatioLimit
 			} else if *torrent.SeedRatioMode == seedRatioModeGlobal {
-				targetRatio = conf.TargetRatio
+				targetRatio = conf.Butler.TargetRatio
 			} else {
 				if *torrent.SeedRatioMode == seedRatioModeNoRatio {
 					logger.Infof("[Butler] Torrent id %d (%s) is finished (ratio %f) but it does not have a ratio target (custom or global): skipping",

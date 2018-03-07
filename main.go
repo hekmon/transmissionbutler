@@ -11,6 +11,7 @@ import (
 
 var logger *hllogger.HlLogger
 var transmission *transmissionrpc.Client
+var conf *config
 
 func main() {
 	// Parse flags
@@ -38,7 +39,6 @@ func main() {
 	logger.Output(" ")
 	// Load config
 	var err error
-	var conf *config
 	logger.Info("[Main] Loading configuration")
 	if conf, err = getConfig(*confFile); err != nil {
 		logger.Fatalf(1, "can't load config: %v", err)
@@ -68,7 +68,7 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	logger.Info("[Main] Starting butler")
-	go butler(&conf.Butler, stopSignal, &wg)
+	go butler(stopSignal, &wg)
 	// Handles system signals properly
 	var mainStop sync.Mutex
 	mainStop.Lock()
