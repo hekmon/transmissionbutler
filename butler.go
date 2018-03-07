@@ -101,6 +101,10 @@ func globalRatio(session *transmissionrpc.SessionArguments) {
 }
 
 func inspectTorrents(torrents []*transmissionrpc.Torrent) (youngTorrents, regularTorrents, finishedTorrents []int64) {
+	// Only 1 run at a time !
+	defer butlerRun.Unlock()
+	logger.Debugf("[Butler] Waiting for butlerRun lock")
+	butlerRun.Lock()
 	// Prepare
 	youngTorrents = make([]int64, 0, len(torrents))
 	regularTorrents = make([]int64, 0, len(torrents))

@@ -13,11 +13,14 @@ func handleSignals(butlerSignal chan<- struct{}, butlerStopped *sync.WaitGroup, 
 	// Register signals
 	var sig os.Signal
 	signalChannel := make(chan os.Signal)
-	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
 	// Waiting for signals to catch
 	for {
 		sig = <-signalChannel
 		switch sig {
+		case syscall.SIGUSR1:
+			logger.Infof("[Main] Signal '%v' caught: forcing the butler to run now")
+			go butlerBatch()
 		case syscall.SIGTERM:
 			fallthrough
 		case syscall.SIGINT:

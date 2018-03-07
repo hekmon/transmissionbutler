@@ -12,6 +12,7 @@ import (
 var logger *hllogger.HlLogger
 var transmission *transmissionrpc.Client
 var conf *config
+var butlerRun sync.Mutex
 
 func main() {
 	// Parse flags
@@ -76,5 +77,7 @@ func main() {
 	go handleSignals(stopSignal, &wg, &mainStop)
 	// Wait butler's clean stop before exiting main goroutine
 	mainStop.Lock()
+	// Lock the butler run in case the worker is done but not a forced run issued by USR1
+	butlerRun.Lock()
 	logger.Info("[Main] Exiting")
 }
