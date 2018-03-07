@@ -6,6 +6,7 @@ After=network.target transmission-daemon.service
 User=transmissionbutler
 EnvironmentFile=/etc/default/transmissionbutler
 ExecStart=/usr/bin/transmissionbutler -conf $CONFIG -loglevel $LOGLEVEL
+ExecReload=/bin/kill -USR1 $MAINPID
 Restart=on-failure
 
 [Install]
