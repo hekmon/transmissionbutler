@@ -10,6 +10,7 @@ Automagically manages your torrents seed life !
 ## Options / Configure
 
 ### Config file
+
 ```json
 {
     "server": {
@@ -30,16 +31,17 @@ Automagically manages your torrents seed life !
 
 ### Behavior
 
-Every `60` minutes the butler will scan each torrent :
-* If the torrent has a custom ratio, it will be skipped
-* If the torrent is seeding since less than `90` days, ratio will be deactivated for this torrent (unlimited seeding)
-* If the torrent is seeding since more than `90` days, global ratio will be reactivated for this torrent
-    * If its current ratio is above the global `3` ratio, transmission will automatically stop this torrent
-    * Else, it will continue to seed until the global ratio is reached
-* If the torrent is completed/stopped and:
-    * is on the global ratio mode and have a ratio above the global setting (`3`), it will be deleted along with its files
-    * is on a custom ratio mode and have it's ratio above its custom setting, it will be deleted along with its files
-    * is neither on the global ratio mode nor on the custom ratio mode (unlimited/no ratio mode), it will be skipped
+Every `60` minutes the butler will scan each torrent:
+
+* If the torrent is sending:
+  * and has a custom ratio, it will be skipped
+  * since less than `90` days, ratio will be deactivated for this torrent (unlimited seeding)
+  * since more than `90` days, global ratio will be reactivated for this torrent
+  * Else, it will continue to seed until the global ratio is reached then transmission will automatically stop this torrent
+* If the torrent is completed/stopped and is:
+  * on the global ratio mode and have a ratio above the global setting (`3`), it will be deleted along with its files
+  * on a custom ratio mode and have it's ratio above its custom setting, it will be deleted along with its files
+  * neither on the global ratio mode nor on the custom ratio mode (unlimited/no ratio mode), it will be skipped
 
 Note that you can set `unlimited_seed_days` to `0` in order to deactivate the unlimited seed period.
 
@@ -61,7 +63,6 @@ vim config.json
 ```
 
 ### Debian package
-
 
 #### Build locally
 
