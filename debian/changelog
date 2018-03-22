@@ -1,3 +1,7 @@
+transmissionbutler (1.3.0) jessie; urgency=medium
+  * main notifications/modifications can be sent over pushover
+ -- Edouard Hur <edouardhur@gmail.com>  Wed, 22 Mar 2018 20:38:16 +0100
+
 transmissionbutler (1.2.0) jessie; urgency=medium
   * butler run can be triggered manually either by systemd unit reload or by USR1 signal
  -- Edouard Hur <edouardhur@gmail.com>  Wed, 07 Mar 2018 15:13:05 +0100
