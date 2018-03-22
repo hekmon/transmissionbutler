@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/gregdel/pushover"
 
 	"github.com/hekmon/transmissionrpc"
 )
@@ -100,15 +104,15 @@ func globalRatio(session *transmissionrpc.SessionArguments) {
 	}
 }
 
-func inspectTorrents(torrents []*transmissionrpc.Torrent) (youngTorrents, regularTorrents, finishedTorrents []int64) {
+func inspectTorrents(torrents []*transmissionrpc.Torrent) (youngTorrents, regularTorrents, finishedTorrents map[int64]string) {
 	// Only 1 run at a time !
 	defer butlerRun.Unlock()
 	logger.Debugf("[Butler] Waiting for butlerRun lock")
 	butlerRun.Lock()
 	// Prepare
-	youngTorrents = make([]int64, 0, len(torrents))
-	regularTorrents = make([]int64, 0, len(torrents))
-	finishedTorrents = make([]int64, 0, len(torrents))
+	youngTorrents = make(map[int64]string, len(torrents))
+	regularTorrents = make(map[int64]string, len(torrents))
+	finishedTorrents = make(map[int64]string, len(torrents))
 	now := time.Now()
 	var targetRatio float64
 	// Start inspection
@@ -135,14 +139,14 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent) (youngTorrents, regula
 				if *torrent.SeedRatioMode != seedRatioModeNoRatio {
 					logger.Infof("[Butler] Seeding torrent id %d (%s) is still young: adding it to the unlimited seed ratio list",
 						*torrent.ID, *torrent.Name)
-					youngTorrents = append(youngTorrents, *torrent.ID)
+					youngTorrents[*torrent.ID] = *torrent.Name
 				}
 			} else {
 				// Torrent is over the unlimited seed time range
 				if *torrent.SeedRatioMode != seedRatioModeGlobal {
 					logger.Infof("[Butler] Seeding torrent id %d (%s) is now over its unlimited seed period: adding it to the regular ratio list",
 						*torrent.ID, *torrent.Name)
-					regularTorrents = append(regularTorrents, *torrent.ID)
+					regularTorrents[*torrent.ID] = *torrent.Name
 				}
 			}
 		}
@@ -167,7 +171,7 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent) (youngTorrents, regula
 			if *torrent.UploadRatio >= targetRatio {
 				logger.Infof("[Butler] Torrent id %d (%s) is finished (ratio %f/%f): adding it to deletion list",
 					*torrent.ID, *torrent.Name, *torrent.UploadRatio, targetRatio)
-				finishedTorrents = append(finishedTorrents, *torrent.ID)
+				finishedTorrents[*torrent.ID] = *torrent.Name
 			} else {
 				logger.Debugf("[Butler] Torrent id %d (%s) is finished but it does not have reached its target ratio yet: %f/%f",
 					*torrent.ID, *torrent.Name, *torrent.UploadRatio, targetRatio)
@@ -213,58 +217,131 @@ func torrentOK(torrent *transmissionrpc.Torrent, index int) (ok bool) {
 	return true
 }
 
-func updateYoungTorrents(youngTorrents []int64) {
+func updateYoungTorrents(youngTorrents map[int64]string) {
 	if len(youngTorrents) > 0 {
+		// Build
 		seedRatioMode := seedRatioModeNoRatio
+		IDList := make([]int64, len(youngTorrents))
+		NameList := make([]string, len(youngTorrents))
+		index := 0
+		for id, name := range youngTorrents {
+			IDList[index] = id
+			NameList[index] = name
+		}
+		// Run
 		err := transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
-			IDs:           youngTorrents,
+			IDs:           IDList,
 			SeedRatioMode: &seedRatioMode,
 		})
-		if err != nil {
-			logger.Errorf("[Butler] Can't apply no ratio mutator to the %d young torrent(s): %v", len(youngTorrents), err)
-		} else {
+		if err == nil {
 			logger.Infof("[Butler] Successfully applied the no ratio mutator to the %d young torrent(s)", len(youngTorrents))
+			// Pushover
+			if conf.isPushoverEnabled() {
+				var prefix string
+				if len(NameList) > 1 {
+					prefix = "s"
+				}
+				pushoverTitle := fmt.Sprintf("%d young torrent%s detected", len(NameList), prefix)
+				butlerSendSuccessMsg(strings.Join(NameList, "\n"), pushoverTitle)
+			}
+		} else {
+			butlerSendErrorMsg(fmt.Sprintf("Can't apply no ratio mutator to the %d young torrent(s): %v", len(youngTorrents)))
 		}
 	}
 }
 
-func updateRegularTorrents(regularTorrents []int64) {
+func updateRegularTorrents(regularTorrents map[int64]string) {
 	if len(regularTorrents) > 0 {
+		// Build
 		seedRatioMode := seedRatioModeGlobal
+		IDList := make([]int64, len(regularTorrents))
+		NameList := make([]string, len(regularTorrents))
+		index := 0
+		for id, name := range regularTorrents {
+			IDList[index] = id
+			NameList[index] = name
+		}
+		// Run
 		err := transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
-			IDs:           regularTorrents,
+			IDs:           IDList,
 			SeedRatioMode: &seedRatioMode,
 		})
-		if err != nil {
-			logger.Errorf("[Butler] Can't apply global ratio mutator to the %d regular torrent(s): %v", len(regularTorrents), err)
-		} else {
+		if err == nil {
 			logger.Infof("[Butler] Successfully applied the global ratio mutator to the %d regular torrent(s)", len(regularTorrents))
+			if conf.isPushoverEnabled() {
+				var prefix string
+				if len(NameList) > 1 {
+					prefix = "s"
+				}
+				pushoverTitle := fmt.Sprintf("%d regular torrent%s detected", len(NameList), prefix)
+				butlerSendSuccessMsg(strings.Join(NameList, "\n"), pushoverTitle)
+			}
+		} else {
+			butlerSendErrorMsg(fmt.Sprintf("Can't apply global ratio mutator to the %d regular torrent(s): %v", len(regularTorrents), err))
 		}
 	}
 }
 
-func deleteFinishedTorrents(finishedTorrents []int64, dwnldDir *string) {
+func deleteFinishedTorrents(finishedTorrents map[int64]string, dwnldDir *string) {
 	if len(finishedTorrents) > 0 {
-		// Delete
+		// Build
+		IDList := make([]int64, len(finishedTorrents))
+		NameList := make([]string, len(finishedTorrents))
+		index := 0
+		for id, name := range finishedTorrents {
+			IDList[index] = id
+			NameList[index] = name
+		}
+		// Run
 		err := transmission.TorrentDelete(&transmissionrpc.TorrentDeletePayload{
-			IDs:             finishedTorrents,
+			IDs:             IDList,
 			DeleteLocalData: true,
 		})
 		if err != nil {
-			logger.Errorf("[Butler] Can't delete the %d finished torrent(s): %v", len(finishedTorrents), err)
-		} else {
-			logger.Infof("[Butler] Successfully deleted the %d finished torrent(s)", len(finishedTorrents))
+			butlerSendErrorMsg(fmt.Sprintf("Can't delete the %d finished torrent(s): %v", len(finishedTorrents), err))
+			return
 		}
+		logger.Infof("[Butler] Successfully deleted the %d finished torrent(s)", len(finishedTorrents))
 		// Fetch free space
 		if dwnldDir != nil {
 			var sizeBytes int64
 			if sizeBytes, err = transmission.FreeSpace(*dwnldDir); err == nil {
-				logger.Infof("[Butler] Remaining free space in download dir: %fGB", float64(sizeBytes)/1024/1024/1024)
+				freeSpace := float64(sizeBytes) / 1024 / 1024 / 1024
+				logger.Infof("[Butler] Remaining free space in download dir: %fGB", freeSpace)
+				// pushover
+				if conf.isPushoverEnabled() {
+					var prefix string
+					if len(NameList) > 1 {
+						prefix = "s"
+					}
+					pushoverTitle := fmt.Sprintf("%d finished torrent%s deleted", len(NameList), prefix)
+					pushoverMsg := fmt.Sprintf("%fGB free after deleting:\n%s", freeSpace, strings.Join(NameList, "\n"))
+					butlerSendSuccessMsg(pushoverMsg, pushoverTitle)
+				}
 			} else {
-				logger.Errorf("[Butler] Can't check free space in download dir: %v", err)
+				butlerSendErrorMsg(fmt.Sprintf("Can't check free space in download dir: %v", err))
 			}
 		} else {
 			logger.Warning("[Butler] Can't fetch free space: session dwld dir is nil")
+		}
+	}
+}
+
+func butlerSendSuccessMsg(pushoverMsg, pushoverTitle string) {
+	if answer, err := pushoverApp.SendMessage(pushover.NewMessageWithTitle(pushoverMsg, pushoverTitle), pushoverDest); err == nil {
+		logger.Errorf("[Butler] Can't send success msg to pushover: %v", err)
+	} else {
+		logger.Debugf("[Butler] Successfully sent the success message to pushover: %s", answer)
+	}
+}
+
+func butlerSendErrorMsg(msg string) {
+	logger.Errorf("[Butler] %s", msg)
+	if conf.isPushoverEnabled() {
+		if answer, err := pushoverApp.SendMessage(pushover.NewMessage(msg), pushoverDest); err == nil {
+			logger.Errorf("[Butler] Can't send error msg to pushover: %v", err)
+		} else {
+			logger.Debugf("[Butler] Successfully sent the error message to pushover: %s", answer)
 		}
 	}
 }
