@@ -23,8 +23,12 @@ Automagically manages your torrents seed life !
     "butler": {
         "check_frequency_minutes": 60,
         "unlimited_seed_days": 90,
-        "target_ratio": 3,
+        "target_ratio": 4,
         "delete_when_done": true
+    },
+    "pushover": {
+        "app_key": null,
+        "user_key": null
     }
 }
 ```
@@ -44,6 +48,8 @@ Every `60` minutes the butler will scan each torrent:
   * neither on the global ratio mode nor on the custom ratio mode (unlimited/no ratio mode), it will be skipped
 
 Note that you can set `unlimited_seed_days` to `0` in order to deactivate the unlimited seed period.
+
+In order to have [pushover](https://pushover.net/) notifications from the butler, `app_key` and `user_key` must not be `null`.
 
 ## Build / Install
 
