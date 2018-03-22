@@ -42,8 +42,13 @@ func getConfig(filename string) (conf *config, err error) {
 }
 
 type config struct {
-	Server serverConfig `json:"server"`
-	Butler butlerConfig `json:"butler"`
+	Server   serverConfig   `json:"server"`
+	Butler   butlerConfig   `json:"butler"`
+	Pushover pushoverConfig `json:"pushover"`
+}
+
+func (c *config) isPushoverEnabled() bool {
+	return c.Pushover.AppKey != nil && c.Pushover.UserKey != nil
 }
 
 type serverConfig struct {
@@ -59,6 +64,11 @@ type butlerConfig struct {
 	UnlimitedSeed  time.Duration `json:"unlimited_seed_days"`
 	TargetRatio    float64       `json:"target_ratio"`
 	DeleteDone     bool          `json:"delete_when_done"`
+}
+
+type pushoverConfig struct {
+	AppKey  *string `json:"app_key"`
+	UserKey *string `json:"user_key"`
 }
 
 func (bc *butlerConfig) UnmarshalJSON(data []byte) (err error) {

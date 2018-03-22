@@ -11,5 +11,9 @@
         "unlimited_seed_days": 90,
         "target_ratio": 3,
         "delete_when_done": true
+    },
+    "pushover": {
+        "app_key": null,
+        "user_key": null
     }
 }
