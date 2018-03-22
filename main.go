@@ -55,9 +55,9 @@ func main() {
 		if logger.IsDebugShown() {
 			msg := "Application is starting... ヽ(　￣д￣)ノ"
 			if answer, err := pushoverApp.SendMessage(pushover.NewMessage(msg), pushoverDest); err == nil {
-				logger.Errorf("[Main] Can't send debug msg to pushover: %v", err)
-			} else {
 				logger.Debugf("[Main] Successfully sent the debug message to pushover: %s", answer)
+			} else {
+				logger.Errorf("[Main] Can't send debug msg to pushover: %v", err)
 			}
 		}
 	}

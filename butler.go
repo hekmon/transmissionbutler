@@ -329,9 +329,9 @@ func deleteFinishedTorrents(finishedTorrents map[int64]string, dwnldDir *string)
 
 func butlerSendSuccessMsg(pushoverMsg, pushoverTitle string) {
 	if answer, err := pushoverApp.SendMessage(pushover.NewMessageWithTitle(pushoverMsg, pushoverTitle), pushoverDest); err == nil {
-		logger.Errorf("[Butler] Can't send success msg to pushover: %v", err)
-	} else {
 		logger.Debugf("[Butler] Successfully sent the success message to pushover: %s", answer)
+	} else {
+		logger.Errorf("[Butler] Can't send success msg to pushover: %v", err)
 	}
 }
 
@@ -339,9 +339,9 @@ func butlerSendErrorMsg(msg string) {
 	logger.Errorf("[Butler] %s", msg)
 	if conf.isPushoverEnabled() {
 		if answer, err := pushoverApp.SendMessage(pushover.NewMessage(msg), pushoverDest); err == nil {
-			logger.Errorf("[Butler] Can't send error msg to pushover: %v", err)
-		} else {
 			logger.Debugf("[Butler] Successfully sent the error message to pushover: %s", answer)
+		} else {
+			logger.Errorf("[Butler] Can't send error msg to pushover: %v", err)
 		}
 	}
 }
