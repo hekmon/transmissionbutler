@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/gregdel/pushover"
 	"github.com/hekmon/hllogger"
 	"github.com/hekmon/transmissionrpc"
 )
@@ -12,6 +13,8 @@ import (
 var logger *hllogger.HlLogger
 var transmission *transmissionrpc.Client
 var conf *config
+var pushoverApp *pushover.Pushover
+var pushoverDest *pushover.Recipient
 var butlerRun sync.Mutex
 
 func main() {
@@ -45,6 +48,11 @@ func main() {
 		logger.Fatalf(1, "can't load config: %v", err)
 	}
 	logger.Debugf("[Main] Loaded configuration:\n%+v", conf)
+	// Init pushover if enabled
+	if conf.isPushoverEnabled() {
+		pushoverApp = pushover.New(*conf.Pushover.AppKey)
+		pushoverDest = pushover.NewRecipient(*conf.Pushover.UserKey)
+	}
 	// Init transmission client
 	transmission = transmissionrpc.New(conf.Server.Host, conf.Server.User, conf.Server.Password,
 		&transmissionrpc.AdvancedConfig{
