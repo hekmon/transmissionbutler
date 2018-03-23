@@ -43,7 +43,7 @@ Every `60` minutes the butler will scan each torrent:
   * since more than `90` days, global ratio will be reactivated for this torrent
   * Else, it will continue to seed until the global ratio is reached then transmission will automatically stop this torrent
 * If the torrent is completed/stopped and is:
-  * on the global ratio mode and have a ratio above the global setting (`3`), it will be deleted along with its files
+  * on the global ratio mode and have a ratio above the global setting (`4`), it will be deleted along with its files
   * on a custom ratio mode and have it's ratio above its custom setting, it will be deleted along with its files
   * neither on the global ratio mode nor on the custom ratio mode (unlimited/no ratio mode), it will be skipped
 
