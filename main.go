@@ -62,12 +62,15 @@ func main() {
 		}
 	}
 	// Init transmission client
-	transmission = transmissionrpc.New(conf.Server.Host, conf.Server.User, conf.Server.Password,
+	transmission, err = transmissionrpc.New(conf.Server.Host, conf.Server.User, conf.Server.Password,
 		&transmissionrpc.AdvancedConfig{
 			HTTPS:     conf.Server.HTTPS,
 			Port:      conf.Server.Port,
 			UserAgent: "github.com/hekmon/transmissionbutler",
 		})
+	if err != nil {
+		logger.Fatalf(2, "[Main] Can't initialize the transmission client: %v", err)
+	}
 	ok, serverVersion, serverMinimumVersion, err := transmission.RPCVersion()
 	if err != nil {
 		logger.Errorf("[Main] Can't check remote transmission RPC version: %v", err)
