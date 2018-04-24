@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gregdel/pushover"
-
 	"github.com/hekmon/transmissionrpc"
 )
 
@@ -32,12 +31,6 @@ func butler(stopSignal <-chan struct{}, wg *sync.WaitGroup) {
 }
 
 var fields = []string{"id", "name", "status", "doneDate", "seedRatioLimit", "seedRatioMode", "uploadRatio"}
-
-const (
-	seedRatioModeGlobal  = int64(0)
-	seedRatioModeCustom  = int64(1)
-	seedRatioModeNoRatio = int64(2)
-)
 
 func butlerBatch() {
 	// Check that global ratio limit is activated and set with correct value
@@ -129,21 +122,21 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent) (youngTorrents, regula
 		// For seeding torrents
 		if *torrent.Status == 6 {
 			// Is this a custom torrent, should we leave it alone ?
-			if *torrent.SeedRatioMode == seedRatioModeCustom {
+			if *torrent.SeedRatioMode == transmissionrpc.SeedRatioModeCustom {
 				logger.Infof("[Butler] Seeding torrent id %d (%s) has a custom ratio enabled: skipping", *torrent.ID, *torrent.Name)
 				continue
 			}
 			// Does this torrent is under/over the free seed time range ?
 			if torrent.DoneDate.Add(conf.Butler.UnlimitedSeed).After(now) {
 				// Torrent is still within the unlimited seed time range
-				if *torrent.SeedRatioMode != seedRatioModeNoRatio {
+				if *torrent.SeedRatioMode != transmissionrpc.SeedRatioModeNoRatio {
 					logger.Infof("[Butler] Seeding torrent id %d (%s) is still young: adding it to the unlimited seed ratio list",
 						*torrent.ID, *torrent.Name)
 					youngTorrents[*torrent.ID] = *torrent.Name
 				}
 			} else {
 				// Torrent is over the unlimited seed time range
-				if *torrent.SeedRatioMode != seedRatioModeGlobal {
+				if *torrent.SeedRatioMode != transmissionrpc.SeedRatioModeGlobal {
 					logger.Infof("[Butler] Seeding torrent id %d (%s) is now over its unlimited seed period: adding it to the regular ratio list",
 						*torrent.ID, *torrent.Name)
 					regularTorrents[*torrent.ID] = *torrent.Name
@@ -153,12 +146,12 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent) (youngTorrents, regula
 		// For stopped/finished torrents
 		if conf.Butler.DeleteDone && *torrent.Status == 0 {
 			// Should we handle this stopped torrent ?
-			if *torrent.SeedRatioMode == seedRatioModeCustom {
+			if *torrent.SeedRatioMode == transmissionrpc.SeedRatioModeCustom {
 				targetRatio = *torrent.SeedRatioLimit
-			} else if *torrent.SeedRatioMode == seedRatioModeGlobal {
+			} else if *torrent.SeedRatioMode == transmissionrpc.SeedRatioModeGlobal {
 				targetRatio = conf.Butler.TargetRatio
 			} else {
-				if *torrent.SeedRatioMode == seedRatioModeNoRatio {
+				if *torrent.SeedRatioMode == transmissionrpc.SeedRatioModeNoRatio {
 					logger.Infof("[Butler] Torrent id %d (%s) is finished (ratio %f) but it does not have a ratio target (custom or global): skipping",
 						*torrent.ID, *torrent.Name, *torrent.UploadRatio)
 				} else {
@@ -220,7 +213,7 @@ func torrentOK(torrent *transmissionrpc.Torrent, index int) (ok bool) {
 func updateYoungTorrents(youngTorrents map[int64]string) {
 	if len(youngTorrents) > 0 {
 		// Build
-		seedRatioMode := seedRatioModeNoRatio
+		seedRatioMode := transmissionrpc.SeedRatioModeNoRatio
 		IDList := make([]int64, len(youngTorrents))
 		NameList := make([]string, len(youngTorrents))
 		index := 0
@@ -245,7 +238,7 @@ func updateYoungTorrents(youngTorrents map[int64]string) {
 				butlerSendSuccessMsg(strings.Join(NameList, "\n"), pushoverTitle)
 			}
 		} else {
-			butlerSendErrorMsg(fmt.Sprintf("Can't apply no ratio mutator to the %d young torrent(s): %v", len(youngTorrents)))
+			butlerSendErrorMsg(fmt.Sprintf("Can't apply no ratio mutator to the %d young torrent(s): %v", len(youngTorrents), err))
 		}
 	}
 }
@@ -253,7 +246,7 @@ func updateYoungTorrents(youngTorrents map[int64]string) {
 func updateRegularTorrents(regularTorrents map[int64]string) {
 	if len(regularTorrents) > 0 {
 		// Build
-		seedRatioMode := seedRatioModeGlobal
+		seedRatioMode := transmissionrpc.SeedRatioModeGlobal
 		IDList := make([]int64, len(regularTorrents))
 		NameList := make([]string, len(regularTorrents))
 		index := 0
