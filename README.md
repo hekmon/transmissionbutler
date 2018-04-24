@@ -35,7 +35,7 @@ Automagically manages your torrents seed life !
 
 ### Behavior
 
-Every `60` minutes the butler will scan each torrent:
+Every `60` minutes the butler will check the global ratio setting and will scan each torrent:
 
 * If the torrent is sending:
   * and has a custom ratio, it will be skipped
