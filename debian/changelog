@@ -1,3 +1,8 @@
+transmissionbutler (1.3.1) jessie; urgency=medium
+  * fix multiples young/regular/to delete torrents handled one by one instead of a batch
+  * update to last version of transmissionrpc
+ -- Edouard Hur <edouardhur@gmail.com>  Wed, 24 Apr 2018 11:49:59 +0100
+
 transmissionbutler (1.3.0) jessie; urgency=medium
   * main notifications/modifications can be sent over pushover
  -- Edouard Hur <edouardhur@gmail.com>  Wed, 22 Mar 2018 20:38:16 +0100
