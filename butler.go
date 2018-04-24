@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hekmon/cunits"
+
 	"github.com/gregdel/pushover"
 	"github.com/hekmon/transmissionrpc"
 )
@@ -297,10 +299,9 @@ func deleteFinishedTorrents(finishedTorrents map[int64]string, dwnldDir *string)
 		logger.Infof("[Butler] Successfully deleted the %d finished torrent(s)", len(finishedTorrents))
 		// Fetch free space
 		if dwnldDir != nil {
-			var sizeBytes int64
-			if sizeBytes, err = transmission.FreeSpace(*dwnldDir); err == nil {
-				freeSpace := float64(sizeBytes) / 1024 / 1024 / 1024
-				logger.Infof("[Butler] Remaining free space in download dir: %fGB", freeSpace)
+			var freeSpace cunits.Bit
+			if freeSpace, err = transmission.FreeSpace(*dwnldDir); err == nil {
+				logger.Infof("[Butler] Remaining free space in download dir: %s", freeSpace)
 				// pushover
 				if conf.isPushoverEnabled() {
 					var prefix string
@@ -308,7 +309,7 @@ func deleteFinishedTorrents(finishedTorrents map[int64]string, dwnldDir *string)
 						prefix = "s"
 					}
 					pushoverTitle := fmt.Sprintf("%d finished torrent%s deleted", len(NameList), prefix)
-					pushoverMsg := fmt.Sprintf("%fGB free after deleting:\n%s", freeSpace, strings.Join(NameList, "\n"))
+					pushoverMsg := fmt.Sprintf("%s free after deleting:\n%s", freeSpace, strings.Join(NameList, "\n"))
 					butlerSendSuccessMsg(pushoverMsg, pushoverTitle)
 				}
 			} else {
