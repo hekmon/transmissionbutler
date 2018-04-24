@@ -6,9 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hekmon/cunits"
-
 	"github.com/gregdel/pushover"
+	"github.com/hekmon/cunits"
 	"github.com/hekmon/transmissionrpc"
 )
 
@@ -222,6 +221,7 @@ func updateYoungTorrents(youngTorrents map[int64]string) {
 		for id, name := range youngTorrents {
 			IDList[index] = id
 			NameList[index] = name
+			index++
 		}
 		// Run
 		err := transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
@@ -255,6 +255,7 @@ func updateRegularTorrents(regularTorrents map[int64]string) {
 		for id, name := range regularTorrents {
 			IDList[index] = id
 			NameList[index] = name
+			index++
 		}
 		// Run
 		err := transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
@@ -286,6 +287,7 @@ func deleteFinishedTorrents(finishedTorrents map[int64]string, dwnldDir *string)
 		for id, name := range finishedTorrents {
 			IDList[index] = id
 			NameList[index] = name
+			index++
 		}
 		// Run
 		err := transmission.TorrentDelete(&transmissionrpc.TorrentDeletePayload{
