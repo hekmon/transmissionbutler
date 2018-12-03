@@ -4,7 +4,7 @@ Automagically manages your torrents seed life !
 
 * Manages/maintains a minimal global ratio
 * Does not mess with seeding torrents with custom ratio (skips them)
-* (optionnal) Allows a limited period of unlimited seed (before switching back to the global ratio control)
+* (optionnal) Allows a limited period of free seed (no ratio period before switching back to the global ratio or custom ratio mode)
 * (optionnal) Auto deletes finished torrents (for stopped torrents with ratio above their configured target)
 
 ## Options / Configure
@@ -22,8 +22,9 @@ Automagically manages your torrents seed life !
     },
     "butler": {
         "check_frequency_minutes": 60,
-        "unlimited_seed_days": 90,
+        "free_seed_days": 90,
         "target_ratio": 4,
+        "restore_custom": true,
         "delete_when_done": true
     },
     "pushover": {
@@ -35,17 +36,19 @@ Automagically manages your torrents seed life !
 
 ### Behavior
 
+(based on previous config file)
+
 Every `60` minutes the butler will check the global ratio setting and will scan each torrent:
 
 * If the torrent is sending:
-  * and has a custom ratio, it will be skipped
-  * since less than `90` days, ratio will be deactivated for this torrent (unlimited seeding)
-  * since more than `90` days, global ratio will be reactivated for this torrent
-  * Else, it will continue to seed until the global ratio is reached then transmission will automatically stop this torrent
-* If the torrent is completed/stopped and is:
-  * on the global ratio mode and have a ratio above the global setting (`4`), it will be deleted along with its files
-  * on a custom ratio mode and have it's ratio above its custom setting, it will be deleted along with its files
-  * neither on the global ratio mode nor on the custom ratio mode (unlimited/no ratio mode), it will be skipped
+  * and has a custom ratio, it will be skipped for seeding tests
+  * since less than `90` days, ratio will be deactivated for this torrent (free seed period)
+  * since more than `90` days:
+    * custom ratio will be activated if the torrent has a custom ratio value saved different than the global ratio (because of `restore_custom`)
+    * global ratio will be activated as either `restore_custom` is off or the saved custom ratio value matches the global ratio value
+* (because of the `delete_when_done`) The torrent will be deleted along with its files if it is completed/stopped and is:
+  * on the global ratio mode and have a ratio above the global setting (`4`)
+  * on a custom ratio mode and have its current ratio above its custom ratio
 
 Note that you can set `unlimited_seed_days` to `0` in order to deactivate the unlimited seed period.
 
