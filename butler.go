@@ -133,7 +133,7 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent) (
 				continue
 			}
 			// Does this torrent is under/over the free seed time range ?
-			if torrent.DoneDate.Add(conf.Butler.FreeSeed).Before(now) {
+			if torrent.DoneDate.Add(conf.Butler.FreeSeed).After(now) {
 				// Torrent is over the unlimited seed time range
 				if conf.Butler.RestoreCustom && *torrent.SeedRatioLimit != conf.Butler.TargetRatio {
 					// This torrent had a custom ratio saved, let's check if this torrent does not need to be restored as custom ratio
