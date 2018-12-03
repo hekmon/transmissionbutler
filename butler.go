@@ -301,7 +301,7 @@ func deleteFinishedTorrents(finishedTorrents map[int64]string, dwnldDir *string)
 		logger.Infof("[Butler] Successfully deleted the %d finished torrent(s)", len(finishedTorrents))
 		// Fetch free space
 		if dwnldDir != nil {
-			var freeSpace cunits.Bit
+			var freeSpace cunits.Bits
 			if freeSpace, err = transmission.FreeSpace(*dwnldDir); err == nil {
 				logger.Infof("[Butler] Remaining free space in download dir: %s", freeSpace)
 				// pushover
