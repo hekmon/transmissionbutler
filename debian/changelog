@@ -1,3 +1,9 @@
+transmissionbutler (1.4.0) jessie; urgency=medium
+  * new mode: free seed exit can restore a previously saved custom ratio value if different from global value
+  * updated libs
+  * compiled with Golang 1.11.2
+ -- Edouard Hur <edouardhur@gmail.com>  Mon, 03 Dec 2018 19:30:40 +0100
+
 transmissionbutler (1.3.1) jessie; urgency=medium
   * fix multiples young/regular/to delete torrents handled one by one instead of a batch
   * update to last version of transmissionrpc
