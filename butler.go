@@ -290,7 +290,7 @@ func deleteFinishedTorrents(finishedTorrents map[int64]string, dwnldDir *string)
 			index++
 		}
 		// Run
-		err := transmission.TorrentDelete(&transmissionrpc.TorrentDeletePayload{
+		err := transmission.TorrentRemove(&transmissionrpc.TorrentRemovePayload{
 			IDs:             IDList,
 			DeleteLocalData: true,
 		})
