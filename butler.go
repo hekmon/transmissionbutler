@@ -31,7 +31,7 @@ func butler(stopSignal <-chan struct{}, wg *sync.WaitGroup) {
 	}
 }
 
-var fields = []string{"id", "name", "status", "doneDate", "seedRatioLimit", "seedRatioMode", "uploadRatio"}
+var fields = []string{"id", "name", "totalSize", "status", "doneDate", "seedRatioLimit", "seedRatioMode", "uploadRatio"}
 
 func butlerBatch() {
 	// Check that global ratio limit is activated and set with correct value
@@ -120,8 +120,8 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent) (
 		}
 		// We can now safely access metadata
 		if logger.IsDebugShown() {
-			logger.Debugf("[Butler] Inspecting torrent %d:\n\tid: %d\n\tname: %s\n\tstatus: %s\n\tdoneDate: %v\n\tseedRatioLimit: %f\n\tseedRatioMode: %s\n\tuploadRatio:%f",
-				index, *torrent.ID, *torrent.Name, *torrent.Status, *torrent.DoneDate, *torrent.SeedRatioLimit, *torrent.SeedRatioMode, *torrent.UploadRatio)
+			logger.Debugf("[Butler] Inspecting torrent %d:\n\tid:\t\t%d\n\tname:\t\t%s\n\tsize:\t\t%s\n\tstatus:\t\t%s\n\tdoneDate:\t%v\n\tseedRatioLimit:\t%f\n\tseedRatioMode:\t%s\n\tuploadRatio:\t%f",
+				index, *torrent.ID, *torrent.Name, *torrent.Status, *torrent.TotalSize, *torrent.DoneDate, *torrent.SeedRatioLimit, *torrent.SeedRatioMode, *torrent.UploadRatio)
 		}
 		// For seeding torrents
 		if *torrent.Status == transmissionrpc.TorrentStatusSeed || *torrent.Status == transmissionrpc.TorrentStatusSeedWait {
@@ -133,7 +133,7 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent) (
 				continue
 			}
 			// Does this torrent is under/over the free seed time range ?
-			if torrent.DoneDate.Add(conf.Butler.FreeSeed).After(now) {
+			if torrent.DoneDate.Add(conf.Butler.FreeSeed).Before(now) {
 				// Torrent is over the unlimited seed time range
 				if conf.Butler.RestoreCustom && *torrent.SeedRatioLimit != conf.Butler.TargetRatio {
 					// This torrent had a custom ratio saved, let's check if this torrent does not need to be restored as custom ratio
