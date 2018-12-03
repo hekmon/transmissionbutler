@@ -120,7 +120,7 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent) (
 		}
 		// We can now safely access metadata
 		if logger.IsDebugShown() {
-			logger.Debugf("[Butler] Inspecting torrent %d:\n\tid: %d\n\tname: %s\n\tstatus: %s\n\tdoneDate: %v\n\tseedRatioLimit: %f\n\tseedRatioMode: %d\n\tuploadRatio:%f",
+			logger.Debugf("[Butler] Inspecting torrent %d:\n\tid: %d\n\tname: %s\n\tstatus: %s\n\tdoneDate: %v\n\tseedRatioLimit: %f\n\tseedRatioMode: %s\n\tuploadRatio:%f",
 				index, *torrent.ID, *torrent.Name, *torrent.Status, *torrent.DoneDate, *torrent.SeedRatioLimit, *torrent.SeedRatioMode, *torrent.UploadRatio)
 		}
 		// For seeding torrents
@@ -141,6 +141,9 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent) (
 						logger.Infof("[Butler] Seeding torrent id %d (%s) is now over its unlimited seed period: adding it to the restore custom ratio list",
 							*torrent.ID, *torrent.Name)
 						customratioCandidates[*torrent.ID] = *torrent.Name
+					} else if logger.IsDebugShown() {
+						logger.Debugf("[Butler] Seeding torrent id %d (%s) is correctly set to use the custom ratio mode (free seed ending date: %v, RestoreCustom: %v, TorrentRatio: %v, GlobalRatio: %v)",
+							*torrent.ID, *torrent.Name, torrent.DoneDate.Add(conf.Butler.FreeSeed), conf.Butler.RestoreCustom, *torrent.SeedRatioLimit, conf.Butler.TargetRatio)
 					}
 				} else {
 					// Let's check if this torrent is in global ratio mode as it should be
@@ -148,14 +151,20 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent) (
 						logger.Infof("[Butler] Seeding torrent id %d (%s) is now over its unlimited seed period: adding it to the global ratio list",
 							*torrent.ID, *torrent.Name)
 						globalratioCandidates[*torrent.ID] = *torrent.Name
+					} else if logger.IsDebugShown() {
+						logger.Debugf("[Butler] Seeding torrent id %d (%s) is correctly set to use the global ratio mode (free seed ending date: %v, RestoreCustom: %v, TorrentRatio: %v, GlobalRatio: %v)",
+							*torrent.ID, *torrent.Name, torrent.DoneDate.Add(conf.Butler.FreeSeed), conf.Butler.RestoreCustom, *torrent.SeedRatioLimit, conf.Butler.TargetRatio)
 					}
 				}
 			} else {
 				// Torrent is still within the unlimited seed time range
 				if *torrent.SeedRatioMode != transmissionrpc.SeedRatioModeNoRatio {
-					logger.Infof("[Butler] Seeding torrent id %d (%s) is still young: adding it to the unlimited seed ratio list",
+					logger.Infof("[Butler] Seeding torrent id %d (%s) is still young: adding it to the free seed ratio list",
 						*torrent.ID, *torrent.Name)
 					freeseedCandidates[*torrent.ID] = *torrent.Name
+				} else if logger.IsDebugShown() {
+					logger.Debugf("[Butler] Seeding torrent id %d (%s) is correctly set to use the free seed mode (free seed ending date: %v)",
+						*torrent.ID, *torrent.Name, torrent.DoneDate.Add(conf.Butler.FreeSeed))
 				}
 			}
 		}
