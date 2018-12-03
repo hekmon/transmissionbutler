@@ -63,12 +63,8 @@ type butlerConfig struct {
 	CheckFrequency time.Duration `json:"check_frequency_minutes"`
 	FreeSeed       time.Duration `json:"free_seed_days"`
 	TargetRatio    float64       `json:"target_ratio"`
+	RestoreCustom  bool          `json:"restore_custom"`
 	DeleteDone     bool          `json:"delete_when_done"`
-}
-
-type pushoverConfig struct {
-	AppKey  *string `json:"app_key"`
-	UserKey *string `json:"user_key"`
 }
 
 func (bc *butlerConfig) UnmarshalJSON(data []byte) (err error) {
@@ -83,4 +79,9 @@ func (bc *butlerConfig) UnmarshalJSON(data []byte) (err error) {
 		bc.FreeSeed *= 24 * time.Hour
 	}
 	return
+}
+
+type pushoverConfig struct {
+	AppKey  *string `json:"app_key"`
+	UserKey *string `json:"user_key"`
 }

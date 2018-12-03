@@ -10,6 +10,7 @@
         "check_frequency_minutes": 60,
         "free_seed_days": 90,
         "target_ratio": 3,
+        "restore_custom": false,
         "delete_when_done": true
     },
     "pushover": {
