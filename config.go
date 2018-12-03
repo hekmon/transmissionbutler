@@ -61,7 +61,7 @@ type serverConfig struct {
 
 type butlerConfig struct {
 	CheckFrequency time.Duration `json:"check_frequency_minutes"`
-	UnlimitedSeed  time.Duration `json:"unlimited_seed_days"`
+	FreeSeed       time.Duration `json:"free_seed_days"`
 	TargetRatio    float64       `json:"target_ratio"`
 	DeleteDone     bool          `json:"delete_when_done"`
 }
@@ -80,7 +80,7 @@ func (bc *butlerConfig) UnmarshalJSON(data []byte) (err error) {
 	}
 	if err = json.Unmarshal(data, tmp); err == nil {
 		bc.CheckFrequency *= time.Minute
-		bc.UnlimitedSeed *= 24 * time.Hour
+		bc.FreeSeed *= 24 * time.Hour
 	}
 	return
 }
