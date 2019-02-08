@@ -46,7 +46,7 @@ func butlerBatch() {
 	logger.Debug("[Butler] Fetching torrents metadata")
 	torrents, err := transmission.TorrentGet(fields, nil)
 	if err != nil {
-		logger.Errorf("[Butler] Can't retreive torrent(s) metadata: %v", err)
+		logger.Errorf("[Butler] Can't retrieve torrent(s) metadata: %v", err)
 		return
 	}
 	logger.Infof("[Butler] Fetched %d torrent(s) metadata", len(torrents))
