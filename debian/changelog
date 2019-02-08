@@ -1,3 +1,9 @@
+transmissionbutler (1.5.0) jessie; urgency=medium
+  * code refacto
+  * pushover notifications now have pullet points for all notifs and current ratio for deleted torrents
+  * compiled with Golang 1.11.5
+ -- Edouard Hur <edouardhur@gmail.com>  Mon, 8 Feb 2019 19:12:25 +0100
+
 transmissionbutler (1.4.0) jessie; urgency=medium
   * new mode: free seed exit can restore a previously saved custom ratio value if different from global value
   * updated libs
