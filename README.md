@@ -1,5 +1,7 @@
 # TransmissionButler
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/hekmon/transmissionbutler)](https://goreportcard.com/report/github.com/hekmon/transmissionbutler)
+
 Automagically manages your torrents seed life !
 
 * Manages/maintains a minimal global ratio
