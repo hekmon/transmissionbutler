@@ -14,11 +14,11 @@ func handleFreeseedCandidates(freeseedCandidates map[int64]string) {
 		// Build
 		seedRatioMode := transmissionrpc.SeedRatioModeNoRatio
 		IDList := make([]int64, len(freeseedCandidates))
-		NameList := make([]string, len(freeseedCandidates))
+		nameList := make([]string, len(freeseedCandidates))
 		index := 0
 		for id, name := range freeseedCandidates {
 			IDList[index] = id
-			NameList[index] = name
+			nameList[index] = name
 			index++
 		}
 		// Run
@@ -34,7 +34,7 @@ func handleFreeseedCandidates(freeseedCandidates map[int64]string) {
 			logger.Infof("[Butler] Successfully switched %d torrent%s to free seed mode", len(freeseedCandidates), suffix)
 			// Pushover
 			if conf.isPushoverEnabled() {
-				butlerSendSuccessMsg(strings.Join(NameList, "\n"), fmt.Sprintf("Switched %d torrent%s to free seed mode", len(NameList), suffix))
+				butlerSendSuccessMsg(butlerMakeStrList(nameList), fmt.Sprintf("Switched %d torrent%s to free seed mode", len(nameList), suffix))
 			}
 		} else {
 			butlerSendErrorMsg(fmt.Sprintf("Can't switch %d torrent%s to free seed mode: %v", len(freeseedCandidates), suffix, err))
@@ -47,11 +47,11 @@ func handleGlobalratioCandidates(globalratioCandidates map[int64]string) {
 		// Build
 		seedRatioMode := transmissionrpc.SeedRatioModeGlobal
 		IDList := make([]int64, len(globalratioCandidates))
-		NameList := make([]string, len(globalratioCandidates))
+		nameList := make([]string, len(globalratioCandidates))
 		index := 0
 		for id, name := range globalratioCandidates {
 			IDList[index] = id
-			NameList[index] = name
+			nameList[index] = name
 			index++
 		}
 		// Run
@@ -66,7 +66,7 @@ func handleGlobalratioCandidates(globalratioCandidates map[int64]string) {
 		if err == nil {
 			logger.Infof("[Butler] Successfully switched %d torrent%s to global ratio mode", len(globalratioCandidates), suffix)
 			if conf.isPushoverEnabled() {
-				butlerSendSuccessMsg(strings.Join(NameList, "\n"), fmt.Sprintf("Switched %d torrent%s to global ratio mode", len(globalratioCandidates), suffix))
+				butlerSendSuccessMsg(butlerMakeStrList(nameList), fmt.Sprintf("Switched %d torrent%s to global ratio mode", len(globalratioCandidates), suffix))
 			}
 		} else {
 			butlerSendErrorMsg(fmt.Sprintf("Can't switch %d torrent%s to global ratio mode: %v", len(globalratioCandidates), suffix, err))
@@ -81,11 +81,11 @@ func handleCustomratioCandidates(customratioCandidates map[int64]string) {
 	// Build
 	seedRatioMode := transmissionrpc.SeedRatioModeCustom
 	IDList := make([]int64, len(customratioCandidates))
-	NameList := make([]string, len(customratioCandidates))
+	nameList := make([]string, len(customratioCandidates))
 	index := 0
 	for id, name := range customratioCandidates {
 		IDList[index] = id
-		NameList[index] = name
+		nameList[index] = name
 		index++
 	}
 	// Run
@@ -100,7 +100,7 @@ func handleCustomratioCandidates(customratioCandidates map[int64]string) {
 	if err == nil {
 		logger.Infof("[Butler] Successfully switched %d torrent%s to custom ratio mode", len(customratioCandidates), suffix)
 		if conf.isPushoverEnabled() {
-			butlerSendSuccessMsg(strings.Join(NameList, "\n"), fmt.Sprintf("Switched %d torrent%s to custom ratio mode", len(customratioCandidates), suffix))
+			butlerSendSuccessMsg(butlerMakeStrList(nameList), fmt.Sprintf("Switched %d torrent%s to custom ratio mode", len(customratioCandidates), suffix))
 		}
 	} else {
 		butlerSendErrorMsg(fmt.Sprintf("Can't switch %d torrent%s to custom ratio mode: %v", len(customratioCandidates), suffix, err))
@@ -111,11 +111,11 @@ func handleTodeleteCandidates(todeleteCandidates map[int64]string, dwnldDir *str
 	if len(todeleteCandidates) > 0 {
 		// Build
 		IDList := make([]int64, len(todeleteCandidates))
-		NameList := make([]string, len(todeleteCandidates))
+		nameList := make([]string, len(todeleteCandidates))
 		index := 0
 		for id, name := range todeleteCandidates {
 			IDList[index] = id
-			NameList[index] = name
+			nameList[index] = name
 			index++
 		}
 		// Run
@@ -124,7 +124,7 @@ func handleTodeleteCandidates(todeleteCandidates map[int64]string, dwnldDir *str
 			DeleteLocalData: true,
 		})
 		var suffix string
-		if len(NameList) > 1 {
+		if len(nameList) > 1 {
 			suffix = "s"
 		}
 		if err != nil {
@@ -138,8 +138,8 @@ func handleTodeleteCandidates(todeleteCandidates map[int64]string, dwnldDir *str
 			if freeSpace, err = transmission.FreeSpace(*dwnldDir); err == nil {
 				logger.Infof("[Butler] Remaining free space in download dir: %s", freeSpace)
 				if conf.isPushoverEnabled() {
-					butlerSendSuccessMsg(fmt.Sprintf("%s free after deleting:\n%s", freeSpace, strings.Join(NameList, "\n")),
-						fmt.Sprintf("%d finished torrent%s deleted", len(NameList), suffix))
+					butlerSendSuccessMsg(fmt.Sprintf("%s free after deleting:\n%s", freeSpace, strings.Join(nameList, "\n")),
+						fmt.Sprintf("%d finished torrent%s deleted", len(nameList), suffix))
 				}
 			} else {
 				butlerSendErrorMsg(fmt.Sprintf("Can't check free space in download dir: %v", err))
@@ -148,6 +148,13 @@ func handleTodeleteCandidates(todeleteCandidates map[int64]string, dwnldDir *str
 			logger.Warning("[Butler] Can't fetch free space: session dwld dir is nil")
 		}
 	}
+}
+
+func butlerMakeStrList(items []string) string {
+	for index, item := range items {
+		items[index] = fmt.Sprintf("• %s", item)
+	}
+	return strings.Join(items, "\n")
 }
 
 func butlerSendSuccessMsg(pushoverMsg, pushoverTitle string) {
