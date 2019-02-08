@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/hekmon/transmissionrpc"
@@ -146,7 +147,7 @@ func inspectStoppedTorrent(torrent *transmissionrpc.Torrent, todeleteCandidates 
 	if *torrent.UploadRatio >= targetRatio {
 		logger.Infof("[Butler] Torrent id %d (%s) is finished (ratio %f/%f): adding it to deletion list",
 			*torrent.ID, *torrent.Name, *torrent.UploadRatio, targetRatio)
-		todeleteCandidates[*torrent.ID] = *torrent.Name
+		todeleteCandidates[*torrent.ID] = fmt.Sprintf("%s (ratio: %.02f)", *torrent.Name, *torrent.UploadRatio)
 	} else if logger.IsDebugShown() {
 		logger.Debugf("[Butler] Torrent id %d (%s) is finished but it does not have reached its target ratio yet: %f/%f",
 			*torrent.ID, *torrent.Name, *torrent.UploadRatio, targetRatio)
