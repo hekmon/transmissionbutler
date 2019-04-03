@@ -33,9 +33,7 @@ func handleFreeseedCandidates(freeseedCandidates map[int64]string) {
 		if err == nil {
 			logger.Infof("[Butler] Successfully switched %d torrent%s to free seed mode", len(freeseedCandidates), suffix)
 			// Pushover
-			if conf.isPushoverEnabled() {
-				butlerSendSuccessMsg(butlerMakeStrList(nameList), fmt.Sprintf("Switched %d torrent%s to free seed mode", len(nameList), suffix))
-			}
+			butlerSendSuccessMsg(butlerMakeStrList(nameList), fmt.Sprintf("Switched %d torrent%s to free seed mode", len(nameList), suffix))
 		} else {
 			butlerSendErrorMsg(fmt.Sprintf("Can't switch %d torrent%s to free seed mode: %v", len(freeseedCandidates), suffix, err))
 		}
@@ -65,9 +63,8 @@ func handleGlobalratioCandidates(globalratioCandidates map[int64]string) {
 		}
 		if err == nil {
 			logger.Infof("[Butler] Successfully switched %d torrent%s to global ratio mode", len(globalratioCandidates), suffix)
-			if conf.isPushoverEnabled() {
-				butlerSendSuccessMsg(butlerMakeStrList(nameList), fmt.Sprintf("Switched %d torrent%s to global ratio mode", len(globalratioCandidates), suffix))
-			}
+			butlerSendSuccessMsg(butlerMakeStrList(nameList),
+				fmt.Sprintf("Switched %d torrent%s to global ratio mode", len(globalratioCandidates), suffix))
 		} else {
 			butlerSendErrorMsg(fmt.Sprintf("Can't switch %d torrent%s to global ratio mode: %v", len(globalratioCandidates), suffix, err))
 		}
@@ -99,9 +96,10 @@ func handleCustomratioCandidates(customratioCandidates map[int64]string) {
 	}
 	if err == nil {
 		logger.Infof("[Butler] Successfully switched %d torrent%s to custom ratio mode", len(customratioCandidates), suffix)
-		if conf.isPushoverEnabled() {
-			butlerSendSuccessMsg(butlerMakeStrList(nameList), fmt.Sprintf("Switched %d torrent%s to custom ratio mode", len(customratioCandidates), suffix))
-		}
+		butlerSendSuccessMsg(
+			butlerMakeStrList(nameList),
+			fmt.Sprintf("Switched %d torrent%s to custom ratio mode", len(customratioCandidates), suffix),
+		)
 	} else {
 		butlerSendErrorMsg(fmt.Sprintf("Can't switch %d torrent%s to custom ratio mode: %v", len(customratioCandidates), suffix, err))
 	}
@@ -137,14 +135,16 @@ func handleTodeleteCandidates(todeleteCandidates map[int64]string, dwnldDir *str
 			var freeSpace cunits.Bits
 			if freeSpace, err = transmission.FreeSpace(*dwnldDir); err == nil {
 				logger.Infof("[Butler] Remaining free space in download dir: %s", freeSpace)
-				if conf.isPushoverEnabled() {
-					butlerSendSuccessMsg(fmt.Sprintf("%s free after deleting:\n%s", freeSpace, strings.Join(nameList, "\n")),
-						fmt.Sprintf("%d finished torrent%s deleted", len(nameList), suffix))
-				}
+				butlerSendSuccessMsg(
+					fmt.Sprintf("%s free after deleting:\n%s", freeSpace, butlerMakeStrList(nameList)),
+					fmt.Sprintf("%d finished torrent%s deleted", len(nameList), suffix),
+				)
 			} else {
+				butlerSendSuccessMsg(
+					fmt.Sprintf("Deleted:\n%s", strings.Join(nameList, "\n")),
+					fmt.Sprintf("%d finished torrent%s deleted", len(nameList), suffix),
+				)
 				butlerSendErrorMsg(fmt.Sprintf("Can't check free space in download dir: %v", err))
-				butlerSendSuccessMsg(fmt.Sprintf("Deleted:\n%s", strings.Join(nameList, "\n")),
-					fmt.Sprintf("%d finished torrent%s deleted", len(nameList), suffix))
 			}
 		} else {
 			logger.Warning("[Butler] Can't fetch free space: session dwld dir is nil")
@@ -160,10 +160,12 @@ func butlerMakeStrList(items []string) string {
 }
 
 func butlerSendSuccessMsg(pushoverMsg, pushoverTitle string) {
-	if answer, err := pushoverApp.SendMessage(pushover.NewMessageWithTitle(pushoverMsg, pushoverTitle), pushoverDest); err == nil {
-		logger.Debugf("[Butler] Successfully sent the success message to pushover: %s", answer)
-	} else {
-		logger.Errorf("[Butler] Can't send success msg to pushover: %v", err)
+	if conf.isPushoverEnabled() {
+		if answer, err := pushoverApp.SendMessage(pushover.NewMessageWithTitle(pushoverMsg, pushoverTitle), pushoverDest); err == nil {
+			logger.Debugf("[Butler] Successfully sent the success message to pushover: %s", answer)
+		} else {
+			logger.Errorf("[Butler] Can't send success msg to pushover: %v", err)
+		}
 	}
 }
 
