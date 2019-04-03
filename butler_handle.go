@@ -141,10 +141,10 @@ func handleTodeleteCandidates(todeleteCandidates map[int64]string, dwnldDir *str
 				)
 			} else {
 				butlerSendSuccessMsg(
-					fmt.Sprintf("Deleted:\n%s", strings.Join(nameList, "\n")),
+					fmt.Sprintf("Deleted:\n%s", butlerMakeStrList(nameList)),
 					fmt.Sprintf("%d finished torrent%s deleted", len(nameList), suffix),
 				)
-				butlerSendErrorMsg(fmt.Sprintf("Can't check free space in download dir: %v", err))
+				butlerSendErrorMsg(fmt.Sprintf("Can't check free space in '%s' dir: %v", *dwnldDir, err))
 			}
 		} else {
 			logger.Warning("[Butler] Can't fetch free space: session dwld dir is nil")
