@@ -3,6 +3,7 @@ Description=transmissionbutler
 After=network-online.target transmission-daemon.service
 
 [Service]
+Type=notify
 User=transmissionbutler
 EnvironmentFile=/etc/default/transmissionbutler
 ExecStart=/usr/bin/transmissionbutler -conf $CONFIG -loglevel $LOGLEVEL
