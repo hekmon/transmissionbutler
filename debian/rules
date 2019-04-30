@@ -16,7 +16,7 @@ override_dh_auto_clean:
 
 override_dh_auto_build:
 	echo $(PATH)
-	go build -v -a -ldflags "-s -w"
+	go build -v -ldflags "-s -w"
 
 # override_dh_auto_test:
 # 	go test -v
