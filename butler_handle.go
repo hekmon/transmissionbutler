@@ -75,7 +75,7 @@ func handleGlobalratioCandidates(globalratioCandidates map[int64]string) {
 	if err != nil {
 		logger.Errorf("[Butler] global ratio switch for %d torrent%s failed: %v", len(globalratioCandidates), suffix, err)
 		pushoverClient.SendHighPriorityMsg(
-			fmt.Sprintf("Can't switch %d torrent%s to global ratio mode: %v", len(globalratioCandidates)),
+			fmt.Sprintf("Can't switch %d torrent%s to global ratio mode: %v", len(globalratioCandidates), suffix, err),
 			"",
 			"global ratio candidates",
 		)
