@@ -67,8 +67,9 @@ func main() {
 	// Init pushover
 	pushoverClient = pushover.New(conf.Pushover.AppKey, conf.Pushover.UserKey, logger)
 	if logger.IsDebugShown() {
-		pushoverClient.SendNormalPriorityMsg("Application is starting... ヽ(　￣д￣)ノ", "", "main init")
+		pushoverClient.SendNormalPriorityMsg("Application is starting... ヽ(　￣д￣)ノ", "", "main")
 	}
+	defer pushoverClient.SendHighPriorityMsg("Application is stopping...", "", "main stopping")
 
 	// Init transmission client
 	transmission, err = transmissionrpc.New(conf.Server.Host, conf.Server.User, conf.Server.Password,
@@ -105,6 +106,13 @@ func main() {
 	mainStop.Lock()
 	logger.Debug("[Main] Starting signal handling goroutine")
 	go handleSignals(stopSignal, &wg, &mainStop)
+
+	// We are ready
+	if sysd != nil {
+		if err = sysd.NotifyReady(); err != nil {
+			logger.Errorf("[Main] Can't send systemd ready notification: %v", err)
+		}
+	}
 
 	// Wait butler's clean stop before exiting main goroutine
 	mainStop.Lock()

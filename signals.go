@@ -24,9 +24,17 @@ func handleSignals(butlerSignal chan<- struct{}, butlerStopped *sync.WaitGroup, 
 		case syscall.SIGTERM:
 			fallthrough
 		case syscall.SIGINT:
+			// Notify stop
 			logger.Infof("[Main] Signal '%v' caught: cleaning up before exiting", sig)
+			if sysd != nil {
+				if err := sysd.NotifyStopping(); err != nil {
+					logger.Errorf("[Main] Sending stopping notification to systemd failed: %v", err)
+				}
+			}
+			// Start stop (haha)
 			butlerSignal <- struct{}{}
 			logger.Debug("[Main] Stop signal sent to butler, waiting for its goroutine to finish")
+			// Wait stop
 			butlerStopped.Wait()
 			logger.Debug("[Main] butler has stopped, unlocking main goroutine to exit")
 			return
