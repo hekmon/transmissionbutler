@@ -132,50 +132,63 @@ func handleCustomratioCandidates(customratioCandidates map[int64]string) {
 }
 
 func handleTodeleteCandidates(todeleteCandidates map[int64]string, dwnldDir *string) {
-	if len(todeleteCandidates) > 0 {
-		// Build
-		IDList := make([]int64, len(todeleteCandidates))
-		nameList := make([]string, len(todeleteCandidates))
-		index := 0
-		for id, name := range todeleteCandidates {
-			IDList[index] = id
-			nameList[index] = name
-			index++
-		}
-		// Run
-		err := transmission.TorrentRemove(&transmissionrpc.TorrentRemovePayload{
-			IDs:             IDList,
-			DeleteLocalData: true,
-		})
-		var suffix string
-		if len(nameList) > 1 {
-			suffix = "s"
-		}
-		if err != nil {
-			butlerSendErrorMsg(fmt.Sprintf("Can't delete %d finished torrent%s: %v", len(todeleteCandidates), suffix, err))
-			return
-		}
-		logger.Infof("[Butler] Successfully deleted the %d finished torrent%s", len(todeleteCandidates), suffix)
-		// Fetch free space
-		if dwnldDir != nil {
-			var freeSpace cunits.Bits
-			if freeSpace, err = transmission.FreeSpace(*dwnldDir); err == nil {
-				logger.Infof("[Butler] Remaining free space in download dir: %s", freeSpace)
-				butlerSendSuccessMsg(
-					fmt.Sprintf("%s free after deleting:\n%s", freeSpace, butlerMakeStrList(nameList)),
-					fmt.Sprintf("%d finished torrent%s deleted", len(nameList), suffix),
-				)
-			} else {
-				butlerSendSuccessMsg(
-					fmt.Sprintf("Deleted:\n%s", butlerMakeStrList(nameList)),
-					fmt.Sprintf("%d finished torrent%s deleted", len(nameList), suffix),
-				)
-				butlerSendErrorMsg(fmt.Sprintf("Can't check free space in '%s' dir: %v", *dwnldDir, err))
-			}
-		} else {
-			logger.Warning("[Butler] Can't fetch free space: session dwld dir is nil")
-		}
+	if len(todeleteCandidates) == 0 {
+		return
 	}
+	// Build
+	IDList := make([]int64, len(todeleteCandidates))
+	nameList := make([]string, len(todeleteCandidates))
+	index := 0
+	for id, name := range todeleteCandidates {
+		IDList[index] = id
+		nameList[index] = name
+		index++
+	}
+	// Run
+	err := transmission.TorrentRemove(&transmissionrpc.TorrentRemovePayload{
+		IDs:             IDList,
+		DeleteLocalData: true,
+	})
+	var suffix string
+	if len(nameList) > 1 {
+		suffix = "s"
+	}
+	if err != nil {
+		logger.Errorf("[Butler] Failted to deleted the %d finished torrent%s: %s", len(todeleteCandidates), suffix, err)
+		pushoverClient.SendHighPriorityMsg(
+			fmt.Sprintf("Can't delete %d finished torrent%s: %v", len(todeleteCandidates), suffix, err),
+			"",
+			"delete candidates",
+		)
+		return
+	}
+	logger.Infof("[Butler] Successfully deleted the %d finished torrent%s", len(todeleteCandidates), suffix)
+	// Fetch free space
+	if dwnldDir == nil {
+		logger.Warning("[Butler] Can't fetch free space: session dwld dir is nil")
+		return
+	}
+	var freeSpace cunits.Bits
+	if freeSpace, err = transmission.FreeSpace(*dwnldDir); err != nil {
+		pushoverClient.SendNormalPriorityMsg(
+			fmt.Sprintf("Deleted:\n%s", butlerMakeStrList(nameList)),
+			fmt.Sprintf("%d finished torrent%s deleted", len(nameList), suffix),
+			"delete candidates",
+		)
+		pushoverClient.SendHighPriorityMsg(
+			fmt.Sprintf("Can't check free space in '%s' dir: %v", *dwnldDir, err),
+			"",
+			"delete candidates",
+		)
+		return
+	}
+	// success
+	logger.Infof("[Butler] Remaining free space in download dir: %s", freeSpace)
+	pushoverClient.SendNormalPriorityMsg(
+		fmt.Sprintf("%s free after deleting:\n%s", freeSpace, butlerMakeStrList(nameList)),
+		fmt.Sprintf("%d finished torrent%s deleted", len(nameList), suffix),
+		"delete candidates",
+	)
 }
 
 func butlerMakeStrList(items []string) string {
