@@ -66,9 +66,7 @@ func main() {
 
 	// Init pushover
 	pushoverClient = pushover.New(conf.Pushover.AppKey, conf.Pushover.UserKey, logger)
-	if logger.IsDebugShown() {
-		pushoverClient.SendNormalPriorityMsg("Application is starting... ヽ(　￣д￣)ノ", "", "main")
-	}
+	pushoverClient.SendLowPriorityMsg("Application is starting... ヽ(　￣д￣)ノ", "", "main")
 	defer pushoverClient.SendHighPriorityMsg("Application is stopping...", "", "main stopping")
 
 	// Init transmission client
