@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gregdel/pushover"
 	"github.com/hekmon/cunits"
 	"github.com/hekmon/transmissionrpc"
 )
@@ -51,34 +50,44 @@ func handleFreeseedCandidates(freeseedCandidates map[int64]string) {
 }
 
 func handleGlobalratioCandidates(globalratioCandidates map[int64]string) {
-	if len(globalratioCandidates) > 0 {
-		// Build
-		seedRatioMode := transmissionrpc.SeedRatioModeGlobal
-		IDList := make([]int64, len(globalratioCandidates))
-		nameList := make([]string, len(globalratioCandidates))
-		index := 0
-		for id, name := range globalratioCandidates {
-			IDList[index] = id
-			nameList[index] = name
-			index++
-		}
-		// Run
-		err := transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
-			IDs:           IDList,
-			SeedRatioMode: &seedRatioMode,
-		})
-		var suffix string
-		if len(globalratioCandidates) > 1 {
-			suffix = "s"
-		}
-		if err == nil {
-			logger.Infof("[Butler] Successfully switched %d torrent%s to global ratio mode", len(globalratioCandidates), suffix)
-			butlerSendSuccessMsg(butlerMakeStrList(nameList),
-				fmt.Sprintf("Switched %d torrent%s to global ratio mode", len(globalratioCandidates), suffix))
-		} else {
-			butlerSendErrorMsg(fmt.Sprintf("Can't switch %d torrent%s to global ratio mode: %v", len(globalratioCandidates), suffix, err))
-		}
+	if len(globalratioCandidates) == 0 {
+		return
 	}
+	// Build
+	seedRatioMode := transmissionrpc.SeedRatioModeGlobal
+	IDList := make([]int64, len(globalratioCandidates))
+	nameList := make([]string, len(globalratioCandidates))
+	index := 0
+	for id, name := range globalratioCandidates {
+		IDList[index] = id
+		nameList[index] = name
+		index++
+	}
+	// Run
+	err := transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
+		IDs:           IDList,
+		SeedRatioMode: &seedRatioMode,
+	})
+	var suffix string
+	if len(globalratioCandidates) > 1 {
+		suffix = "s"
+	}
+	if err != nil {
+		logger.Errorf("[Butler] global ratio switch for %d torrent%s failed: %v", len(globalratioCandidates), suffix, err)
+		pushoverClient.SendHighPriorityMsg(
+			fmt.Sprintf("Can't switch %d torrent%s to global ratio mode: %v", len(globalratioCandidates)),
+			"",
+			"global ratio candidates",
+		)
+		return
+	}
+	// Success
+	logger.Infof("[Butler] Successfully switched %d torrent%s to global ratio mode", len(globalratioCandidates), suffix)
+	pushoverClient.SendNormalPriorityMsg(
+		butlerMakeStrList(nameList),
+		fmt.Sprintf("Switched %d torrent%s to global ratio mode", len(globalratioCandidates), suffix),
+		"global ratio candidates",
+	)
 }
 
 func handleCustomratioCandidates(customratioCandidates map[int64]string) {
@@ -167,25 +176,4 @@ func butlerMakeStrList(items []string) string {
 		items[index] = fmt.Sprintf("• %s", item)
 	}
 	return strings.Join(items, "\n")
-}
-
-func butlerSendSuccessMsg(pushoverMsg, pushoverTitle string) {
-	if conf.isPushoverEnabled() {
-		if answer, err := pushoverApp.SendMessage(pushover.NewMessageWithTitle(pushoverMsg, pushoverTitle), pushoverDest); err == nil {
-			logger.Debugf("[Butler] Successfully sent the success message to pushover: %s", answer)
-		} else {
-			logger.Errorf("[Butler] Can't send success msg to pushover: %v", err)
-		}
-	}
-}
-
-func butlerSendErrorMsg(msg string) {
-	logger.Errorf("[Butler] %s", msg)
-	if conf.isPushoverEnabled() {
-		if answer, err := pushoverApp.SendMessage(pushover.NewMessage(msg), pushoverDest); err == nil {
-			logger.Debugf("[Butler] Successfully sent the error message to pushover: %s", answer)
-		} else {
-			logger.Errorf("[Butler] Can't send error msg to pushover: %v", err)
-		}
-	}
 }
