@@ -113,15 +113,22 @@ func handleCustomratioCandidates(customratioCandidates map[int64]string) {
 	if len(customratioCandidates) > 1 {
 		suffix = "s"
 	}
-	if err == nil {
-		logger.Infof("[Butler] Successfully switched %d torrent%s to custom ratio mode", len(customratioCandidates), suffix)
-		butlerSendSuccessMsg(
-			butlerMakeStrList(nameList),
-			fmt.Sprintf("Switched %d torrent%s to custom ratio mode", len(customratioCandidates), suffix),
+	if err != nil {
+		logger.Errorf("[Butler] custom ratio switch for %d torrent%s failed: %v", len(customratioCandidates), suffix, err)
+		pushoverClient.SendHighPriorityMsg(
+			fmt.Sprintf("Can't switch %d torrent%s to custom ratio mode: %v", len(customratioCandidates), suffix, err),
+			"",
+			"custom ratio candidates",
 		)
-	} else {
-		butlerSendErrorMsg(fmt.Sprintf("Can't switch %d torrent%s to custom ratio mode: %v", len(customratioCandidates), suffix, err))
+		return
 	}
+	// Success
+	logger.Infof("[Butler] Successfully switched %d torrent%s to custom ratio mode", len(customratioCandidates), suffix)
+	pushoverClient.SendNormalPriorityMsg(
+		butlerMakeStrList(nameList),
+		fmt.Sprintf("Switched %d torrent%s to custom ratio mode", len(customratioCandidates), suffix),
+		"custom ratio candidates",
+	)
 }
 
 func handleTodeleteCandidates(todeleteCandidates map[int64]string, dwnldDir *string) {
