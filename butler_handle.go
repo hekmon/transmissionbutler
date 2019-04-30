@@ -10,34 +10,44 @@ import (
 )
 
 func handleFreeseedCandidates(freeseedCandidates map[int64]string) {
-	if len(freeseedCandidates) > 0 {
-		// Build
-		seedRatioMode := transmissionrpc.SeedRatioModeNoRatio
-		IDList := make([]int64, len(freeseedCandidates))
-		nameList := make([]string, len(freeseedCandidates))
-		index := 0
-		for id, name := range freeseedCandidates {
-			IDList[index] = id
-			nameList[index] = name
-			index++
-		}
-		// Run
-		err := transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
-			IDs:           IDList,
-			SeedRatioMode: &seedRatioMode,
-		})
-		var suffix string
-		if len(freeseedCandidates) > 1 {
-			suffix = "s"
-		}
-		if err == nil {
-			logger.Infof("[Butler] Successfully switched %d torrent%s to free seed mode", len(freeseedCandidates), suffix)
-			// Pushover
-			butlerSendSuccessMsg(butlerMakeStrList(nameList), fmt.Sprintf("Switched %d torrent%s to free seed mode", len(nameList), suffix))
-		} else {
-			butlerSendErrorMsg(fmt.Sprintf("Can't switch %d torrent%s to free seed mode: %v", len(freeseedCandidates), suffix, err))
-		}
+	if len(freeseedCandidates) == 0 {
+		return
 	}
+	// Build
+	seedRatioMode := transmissionrpc.SeedRatioModeNoRatio
+	IDList := make([]int64, len(freeseedCandidates))
+	nameList := make([]string, len(freeseedCandidates))
+	index := 0
+	for id, name := range freeseedCandidates {
+		IDList[index] = id
+		nameList[index] = name
+		index++
+	}
+	// Run
+	err := transmission.TorrentSet(&transmissionrpc.TorrentSetPayload{
+		IDs:           IDList,
+		SeedRatioMode: &seedRatioMode,
+	})
+	var suffix string
+	if len(freeseedCandidates) > 1 {
+		suffix = "s"
+	}
+	if err != nil {
+		logger.Errorf("[Butler] Free seed switch for %d torrent%s failed: %v", len(freeseedCandidates), suffix, err)
+		pushoverClient.SendHighPriorityMsg(
+			fmt.Sprintf("Can't switch %d torrent%s to free seed mode: %v", len(freeseedCandidates), suffix, err),
+			"",
+			"free seed candidates",
+		)
+		return
+	}
+	// Success
+	logger.Infof("[Butler] Successfully switched %d torrent%s to free seed mode", len(freeseedCandidates), suffix)
+	pushoverClient.SendNormalPriorityMsg(
+		butlerMakeStrList(nameList),
+		fmt.Sprintf("Switched %d torrent%s to free seed mode", len(nameList), suffix),
+		"free seed candidates",
+	)
 }
 
 func handleGlobalratioCandidates(globalratioCandidates map[int64]string) {

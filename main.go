@@ -5,20 +5,19 @@ import (
 	"os"
 	"sync"
 
-	"github.com/gregdel/pushover"
 	"github.com/hekmon/hllogger"
+	"github.com/hekmon/pushover"
 	"github.com/hekmon/transmissionrpc"
 	systemd "github.com/iguanesolutions/go-systemd"
 )
 
 var (
-	logger       *hllogger.HlLogger
-	transmission *transmissionrpc.Client
-	conf         *config
-	sysd         *systemd.Notifier
-	pushoverApp  *pushover.Pushover
-	pushoverDest *pushover.Recipient
-	butlerRun    sync.Mutex
+	logger         *hllogger.HlLogger
+	transmission   *transmissionrpc.Client
+	conf           *config
+	sysd           *systemd.Notifier
+	pushoverClient *pushover.Controller
+	butlerRun      sync.Mutex
 )
 
 func main() {
@@ -65,18 +64,10 @@ func main() {
 	}
 	logger.Debugf("[Main] Loaded configuration:\n%+v", conf)
 
-	// Init pushover if enabled
-	if conf.isPushoverEnabled() {
-		pushoverApp = pushover.New(*conf.Pushover.AppKey)
-		pushoverDest = pushover.NewRecipient(*conf.Pushover.UserKey)
-		if logger.IsDebugShown() {
-			msg := "Application is starting... ヽ(　￣д￣)ノ"
-			if answer, err := pushoverApp.SendMessage(pushover.NewMessage(msg), pushoverDest); err == nil {
-				logger.Debugf("[Main] Successfully sent the debug message to pushover: %s", answer)
-			} else {
-				logger.Errorf("[Main] Can't send debug msg to pushover: %v", err)
-			}
-		}
+	// Init pushover
+	pushoverClient = pushover.New(conf.Pushover.AppKey, conf.Pushover.UserKey, logger)
+	if logger.IsDebugShown() {
+		pushoverClient.SendNormalPriorityMsg("Application is starting... ヽ(　￣д￣)ノ", "", "main init")
 	}
 
 	// Init transmission client
