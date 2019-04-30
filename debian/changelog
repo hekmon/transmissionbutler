@@ -1,6 +1,8 @@
-transmissionbutler (1.5.1-1) jessie; urgency=medium
-  * enhance systemd startup (no more failed network connection)
- -- Edouard Hur <edouardhur@gmail.com>  Wed, 3 Apr 2019 22:47:42 +0200
+transmissionbutler (1.6.0) jessie; urgency=medium
+  * update logger lib (sysd compat)
+  * switch to pushover wrapper to simplify calls
+  * systemd notify compat
+ -- Edouard Hur <edouardhur@gmail.com>  Wed, 30 Apr 2019 16:51:42 +0200
 
 transmissionbutler (1.5.1) jessie; urgency=medium
   * log fixing, mostly pushover
