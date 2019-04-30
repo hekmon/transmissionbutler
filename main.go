@@ -66,7 +66,6 @@ func main() {
 
 	// Init pushover
 	pushoverClient = pushover.New(conf.Pushover.AppKey, conf.Pushover.UserKey, logger)
-	pushoverClient.SendLowPriorityMsg("Application is starting... ヽ(　￣д￣)ノ", "", "main")
 	defer pushoverClient.SendHighPriorityMsg("Application is stopping...", "", "main stopping")
 
 	// Init transmission client
@@ -111,6 +110,7 @@ func main() {
 			logger.Errorf("[Main] Can't send systemd ready notification: %v", err)
 		}
 	}
+	pushoverClient.SendLowPriorityMsg("Application is started ヽ(　￣д￣)ノ", "", "main")
 
 	// Wait butler's clean stop before exiting main goroutine
 	mainStop.Lock()
