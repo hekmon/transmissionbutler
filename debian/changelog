@@ -1,3 +1,7 @@
+transmissionbutler (1.6.1) jessie; urgency=medium
+  * rework the start push msg
+ -- Edouard Hur <edouardhur@gmail.com>  Wed, 01 May 2019 17:02:42 +0200
+
 transmissionbutler (1.6.0) jessie; urgency=medium
   * update logger lib (sysd compat)
   * switch to pushover wrapper to simplify calls
