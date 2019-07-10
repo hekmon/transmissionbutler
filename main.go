@@ -15,7 +15,6 @@ var (
 	logger         *hllogger.HlLogger
 	transmission   *transmissionrpc.Client
 	conf           *config
-	sysd           *systemd.Notifier
 	pushoverClient *pushover.Controller
 	butlerRun      sync.Mutex
 )
@@ -28,8 +27,8 @@ func main() {
 
 	// Init systemd controller
 	var err error
-	if sysd, err = systemd.NewNotifier(); err != nil {
-		logger.Warningf("[Main] can't start systemd notifier, systemd functions won't be enabled: %v\n", err)
+	if !systemd.IsNotifyEnabled() {
+		logger.Warning("[Main] systemd not detected: systemd special features won't be available")
 	}
 
 	// Init logger
@@ -50,7 +49,7 @@ func main() {
 	}
 	logger = hllogger.New(os.Stderr, &hllogger.Config{
 		LogLevel:              ll,
-		SystemdJournaldCompat: sysd != nil,
+		SystemdJournaldCompat: systemd.IsNotifyEnabled(),
 	})
 	logger.Output(" ")
 	logger.Output(" • Transmission Butler •")
@@ -105,10 +104,8 @@ func main() {
 	go handleSignals(stopSignal, &wg, &mainStop)
 
 	// We are ready
-	if sysd != nil {
-		if err = sysd.NotifyReady(); err != nil {
-			logger.Errorf("[Main] Can't send systemd ready notification: %v", err)
-		}
+	if err = systemd.NotifyReady(); err != nil {
+		logger.Errorf("[Main] Can't send systemd ready notification: %v", err)
 	}
 	pushoverClient.SendLowPriorityMsg("Application is started ヽ(　￣д￣)ノ", "", "main")
 
