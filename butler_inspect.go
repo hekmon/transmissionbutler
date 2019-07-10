@@ -1,23 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/hekmon/transmissionrpc"
 )
 
 func inspectTorrents(torrents []*transmissionrpc.Torrent) (
-	freeseedCandidates, globalratioCandidates, customratioCandidates, todeleteCandidates map[int64]string) {
+	freeseedCandidates, globalratioCandidates, customratioCandidates, todeleteCandidates []*transmissionrpc.Torrent) {
 	// Only 1 run at a time !
 	defer butlerRun.Unlock()
 	logger.Debugf("[Butler] Waiting for butlerRun lock")
 	butlerRun.Lock()
 	// Prepare
-	freeseedCandidates = make(map[int64]string, len(torrents))
-	globalratioCandidates = make(map[int64]string, len(torrents))
-	customratioCandidates = make(map[int64]string, len(torrents))
-	todeleteCandidates = make(map[int64]string, len(torrents))
+	freeseedCandidates = make([]*transmissionrpc.Torrent, 0, len(torrents))
+	globalratioCandidates = make([]*transmissionrpc.Torrent, 0, len(torrents))
+	customratioCandidates = make([]*transmissionrpc.Torrent, 0, len(torrents))
+	todeleteCandidates = make([]*transmissionrpc.Torrent, 0, len(torrents))
 	now := time.Now()
 	// Start inspection
 	for index, torrent := range torrents {
@@ -40,11 +39,11 @@ func inspectTorrents(torrents []*transmissionrpc.Torrent) (
 				continue
 			}
 			// Else process it
-			inspectSeedingTorrent(torrent, now, freeseedCandidates, globalratioCandidates, customratioCandidates)
+			inspectSeedingTorrent(torrent, now, &freeseedCandidates, &globalratioCandidates, &customratioCandidates)
 		}
 		// For stopped/finished torrents
 		if conf.Butler.DeleteDone && *torrent.Status == transmissionrpc.TorrentStatusStopped {
-			inspectStoppedTorrent(torrent, todeleteCandidates)
+			inspectStoppedTorrent(torrent, &todeleteCandidates)
 		}
 	}
 	return
@@ -86,7 +85,7 @@ func torrentOK(torrent *transmissionrpc.Torrent, index int) (ok bool) {
 	return true
 }
 
-func inspectSeedingTorrent(torrent *transmissionrpc.Torrent, now time.Time, freeseedCandidates, globalratioCandidates, customratioCandidates map[int64]string) {
+func inspectSeedingTorrent(torrent *transmissionrpc.Torrent, now time.Time, freeseedCandidates, globalratioCandidates, customratioCandidates *[]*transmissionrpc.Torrent) {
 	// Does this torrent is under/over the free seed time range ?
 	if torrent.DoneDate.Add(conf.Butler.FreeSeed).Before(now) {
 		// Torrent is over the unlimited seed time range
@@ -95,7 +94,7 @@ func inspectSeedingTorrent(torrent *transmissionrpc.Torrent, now time.Time, free
 			if *torrent.SeedRatioMode != transmissionrpc.SeedRatioModeCustom {
 				logger.Infof("[Butler] Seeding torrent id %d (%s) is now over its unlimited seed period: adding it to the restore custom ratio list",
 					*torrent.ID, *torrent.Name)
-				customratioCandidates[*torrent.ID] = *torrent.Name
+				*customratioCandidates = append(*customratioCandidates, torrent)
 			} else if logger.IsDebugShown() {
 				logger.Debugf("[Butler] Seeding torrent id %d (%s) is correctly set to use the custom ratio mode (free seed ending date: %v, RestoreCustom: %v, TorrentRatio: %v, GlobalRatio: %v)",
 					*torrent.ID, *torrent.Name, torrent.DoneDate.Add(conf.Butler.FreeSeed), conf.Butler.RestoreCustom, *torrent.SeedRatioLimit, conf.Butler.TargetRatio)
@@ -105,7 +104,7 @@ func inspectSeedingTorrent(torrent *transmissionrpc.Torrent, now time.Time, free
 			if *torrent.SeedRatioMode != transmissionrpc.SeedRatioModeGlobal {
 				logger.Infof("[Butler] Seeding torrent id %d (%s) is now over its unlimited seed period: adding it to the global ratio list",
 					*torrent.ID, *torrent.Name)
-				globalratioCandidates[*torrent.ID] = *torrent.Name
+				*globalratioCandidates = append(*globalratioCandidates, torrent)
 			} else if logger.IsDebugShown() {
 				logger.Debugf("[Butler] Seeding torrent id %d (%s) is correctly set to use the global ratio mode (free seed ending date: %v, RestoreCustom: %v, TorrentRatio: %v, GlobalRatio: %v)",
 					*torrent.ID, *torrent.Name, torrent.DoneDate.Add(conf.Butler.FreeSeed), conf.Butler.RestoreCustom, *torrent.SeedRatioLimit, conf.Butler.TargetRatio)
@@ -116,7 +115,7 @@ func inspectSeedingTorrent(torrent *transmissionrpc.Torrent, now time.Time, free
 		if *torrent.SeedRatioMode != transmissionrpc.SeedRatioModeNoRatio {
 			logger.Infof("[Butler] Seeding torrent id %d (%s) is still young: adding it to the free seed ratio list",
 				*torrent.ID, *torrent.Name)
-			freeseedCandidates[*torrent.ID] = *torrent.Name
+			*freeseedCandidates = append(*freeseedCandidates, torrent)
 		} else if logger.IsDebugShown() {
 			logger.Debugf("[Butler] Seeding torrent id %d (%s) is correctly set to use the free seed mode (free seed ending date: %v)",
 				*torrent.ID, *torrent.Name, torrent.DoneDate.Add(conf.Butler.FreeSeed))
@@ -124,7 +123,7 @@ func inspectSeedingTorrent(torrent *transmissionrpc.Torrent, now time.Time, free
 	}
 }
 
-func inspectStoppedTorrent(torrent *transmissionrpc.Torrent, todeleteCandidates map[int64]string) {
+func inspectStoppedTorrent(torrent *transmissionrpc.Torrent, todeleteCandidates *[]*transmissionrpc.Torrent) {
 	var targetRatio float64
 	// Should we handle this stopped torrent ?
 	if *torrent.SeedRatioMode == transmissionrpc.SeedRatioModeCustom {
@@ -147,7 +146,7 @@ func inspectStoppedTorrent(torrent *transmissionrpc.Torrent, todeleteCandidates 
 	if *torrent.UploadRatio >= targetRatio {
 		logger.Infof("[Butler] Torrent id %d (%s) is finished (ratio %f/%f): adding it to deletion list",
 			*torrent.ID, *torrent.Name, *torrent.UploadRatio, targetRatio)
-		todeleteCandidates[*torrent.ID] = fmt.Sprintf("%s (ratio: %.02f)", *torrent.Name, *torrent.UploadRatio)
+		*todeleteCandidates = append(*todeleteCandidates, torrent)
 	} else if logger.IsDebugShown() {
 		logger.Debugf("[Butler] Torrent id %d (%s) is finished but it does not have reached its target ratio yet: %f/%f",
 			*torrent.ID, *torrent.Name, *torrent.UploadRatio, targetRatio)

@@ -8,7 +8,7 @@ import (
 	"github.com/hekmon/transmissionrpc"
 )
 
-func handleFreeseedCandidates(freeseedCandidates map[int64]string) {
+func handleFreeseedCandidates(freeseedCandidates []*transmissionrpc.Torrent) {
 	if len(freeseedCandidates) == 0 {
 		return
 	}
@@ -17,9 +17,9 @@ func handleFreeseedCandidates(freeseedCandidates map[int64]string) {
 	IDList := make([]int64, len(freeseedCandidates))
 	nameList := make([]string, len(freeseedCandidates))
 	index := 0
-	for id, name := range freeseedCandidates {
-		IDList[index] = id
-		nameList[index] = name
+	for _, torrent := range freeseedCandidates {
+		IDList[index] = *torrent.ID
+		nameList[index] = *torrent.Name
 		index++
 	}
 	// Run
@@ -49,7 +49,7 @@ func handleFreeseedCandidates(freeseedCandidates map[int64]string) {
 	)
 }
 
-func handleGlobalratioCandidates(globalratioCandidates map[int64]string) {
+func handleGlobalratioCandidates(globalratioCandidates []*transmissionrpc.Torrent) {
 	if len(globalratioCandidates) == 0 {
 		return
 	}
@@ -58,9 +58,9 @@ func handleGlobalratioCandidates(globalratioCandidates map[int64]string) {
 	IDList := make([]int64, len(globalratioCandidates))
 	nameList := make([]string, len(globalratioCandidates))
 	index := 0
-	for id, name := range globalratioCandidates {
-		IDList[index] = id
-		nameList[index] = name
+	for _, torrent := range globalratioCandidates {
+		IDList[index] = *torrent.ID
+		nameList[index] = *torrent.Name
 		index++
 	}
 	// Run
@@ -90,7 +90,7 @@ func handleGlobalratioCandidates(globalratioCandidates map[int64]string) {
 	)
 }
 
-func handleCustomratioCandidates(customratioCandidates map[int64]string) {
+func handleCustomratioCandidates(customratioCandidates []*transmissionrpc.Torrent) {
 	if len(customratioCandidates) == 0 {
 		return
 	}
@@ -99,9 +99,9 @@ func handleCustomratioCandidates(customratioCandidates map[int64]string) {
 	IDList := make([]int64, len(customratioCandidates))
 	nameList := make([]string, len(customratioCandidates))
 	index := 0
-	for id, name := range customratioCandidates {
-		IDList[index] = id
-		nameList[index] = name
+	for _, torrent := range customratioCandidates {
+		IDList[index] = *torrent.ID
+		nameList[index] = *torrent.Name
 		index++
 	}
 	// Run
@@ -131,7 +131,7 @@ func handleCustomratioCandidates(customratioCandidates map[int64]string) {
 	)
 }
 
-func handleTodeleteCandidates(todeleteCandidates map[int64]string, dwnldDir *string) {
+func handleTodeleteCandidates(todeleteCandidates []*transmissionrpc.Torrent, dwnldDir *string) {
 	if len(todeleteCandidates) == 0 {
 		return
 	}
@@ -139,9 +139,9 @@ func handleTodeleteCandidates(todeleteCandidates map[int64]string, dwnldDir *str
 	IDList := make([]int64, len(todeleteCandidates))
 	nameList := make([]string, len(todeleteCandidates))
 	index := 0
-	for id, name := range todeleteCandidates {
-		IDList[index] = id
-		nameList[index] = name
+	for _, torrent := range todeleteCandidates {
+		IDList[index] = *torrent.ID
+		nameList[index] = fmt.Sprintf("%s (ratio: %.02f)", *torrent.Name, *torrent.UploadRatio)
 		index++
 	}
 	// Run
