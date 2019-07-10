@@ -139,9 +139,15 @@ func handleTodeleteCandidates(todeleteCandidates []*transmissionrpc.Torrent, dwn
 	IDList := make([]int64, len(todeleteCandidates))
 	nameList := make([]string, len(todeleteCandidates))
 	index := 0
+	var targetRatio float64
 	for _, torrent := range todeleteCandidates {
 		IDList[index] = *torrent.ID
-		nameList[index] = fmt.Sprintf("%s (ratio: %.02f)", *torrent.Name, *torrent.UploadRatio)
+		if *torrent.SeedRatioMode == transmissionrpc.SeedRatioModeCustom {
+			targetRatio = *torrent.SeedRatioLimit
+		} else {
+			targetRatio = conf.Butler.TargetRatio
+		}
+		nameList[index] = fmt.Sprintf("%s (ratio: %.02f/%.02f)", *torrent.Name, *torrent.UploadRatio, targetRatio)
 		index++
 	}
 	// Run
