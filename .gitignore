@@ -1,6 +1,9 @@
 # VSCode local settings
 .vscode/
 
+# Vendoring
+vendor/
+
 # Dev
 config_dev.json
 transmissionbutler
