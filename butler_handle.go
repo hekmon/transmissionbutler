@@ -19,7 +19,7 @@ func handleFreeseedCandidates(freeseedCandidates []*transmissionrpc.Torrent) {
 	index := 0
 	for _, torrent := range freeseedCandidates {
 		IDList[index] = *torrent.ID
-		nameList[index] = *torrent.Name
+		nameList[index] = fmt.Sprintf("%s (ratio: %.02f/+∞)", *torrent.Name, *torrent.UploadRatio)
 		index++
 	}
 	// Run
@@ -60,7 +60,7 @@ func handleGlobalratioCandidates(globalratioCandidates []*transmissionrpc.Torren
 	index := 0
 	for _, torrent := range globalratioCandidates {
 		IDList[index] = *torrent.ID
-		nameList[index] = *torrent.Name
+		nameList[index] = fmt.Sprintf("%s (ratio: %.02f/%.02f)", *torrent.Name, *torrent.UploadRatio, getTorrentTargetRatio(torrent))
 		index++
 	}
 	// Run
@@ -101,7 +101,7 @@ func handleCustomratioCandidates(customratioCandidates []*transmissionrpc.Torren
 	index := 0
 	for _, torrent := range customratioCandidates {
 		IDList[index] = *torrent.ID
-		nameList[index] = *torrent.Name
+		nameList[index] = fmt.Sprintf("%s (ratio: %.02f/%.02f)", *torrent.Name, *torrent.UploadRatio, getTorrentTargetRatio(torrent))
 		index++
 	}
 	// Run
@@ -139,15 +139,9 @@ func handleTodeleteCandidates(todeleteCandidates []*transmissionrpc.Torrent, dwn
 	IDList := make([]int64, len(todeleteCandidates))
 	nameList := make([]string, len(todeleteCandidates))
 	index := 0
-	var targetRatio float64
 	for _, torrent := range todeleteCandidates {
 		IDList[index] = *torrent.ID
-		if *torrent.SeedRatioMode == transmissionrpc.SeedRatioModeCustom {
-			targetRatio = *torrent.SeedRatioLimit
-		} else {
-			targetRatio = conf.Butler.TargetRatio
-		}
-		nameList[index] = fmt.Sprintf("%s (ratio: %.02f/%.02f)", *torrent.Name, *torrent.UploadRatio, targetRatio)
+		nameList[index] = fmt.Sprintf("%s (ratio: %.02f/%.02f)", *torrent.Name, *torrent.UploadRatio, getTorrentTargetRatio(torrent))
 		index++
 	}
 	// Run
@@ -202,4 +196,17 @@ func butlerMakeStrList(items []string) string {
 		items[index] = fmt.Sprintf("• %s", item)
 	}
 	return strings.Join(items, "\n")
+}
+
+func getTorrentTargetRatio(torrent *transmissionrpc.Torrent) float64 {
+	if torrent == nil || torrent.SeedRatioMode == nil {
+		return -1
+	}
+	if *torrent.SeedRatioMode == transmissionrpc.SeedRatioModeCustom {
+		if torrent.SeedRatioLimit == nil {
+			return -2
+		}
+		return *torrent.SeedRatioLimit
+	}
+	return conf.Butler.TargetRatio
 }
