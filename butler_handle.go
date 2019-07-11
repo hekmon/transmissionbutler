@@ -60,7 +60,7 @@ func handleGlobalratioCandidates(globalratioCandidates []*transmissionrpc.Torren
 	index := 0
 	for _, torrent := range globalratioCandidates {
 		IDList[index] = *torrent.ID
-		nameList[index] = fmt.Sprintf("%s (ratio: %.02f/%.02f)", *torrent.Name, *torrent.UploadRatio, getTorrentTargetRatio(torrent))
+		nameList[index] = fmt.Sprintf("%s (ratio: %.02f/%.02f)", *torrent.Name, *torrent.UploadRatio, conf.Butler.TargetRatio)
 		index++
 	}
 	// Run
@@ -101,7 +101,7 @@ func handleCustomratioCandidates(customratioCandidates []*transmissionrpc.Torren
 	index := 0
 	for _, torrent := range customratioCandidates {
 		IDList[index] = *torrent.ID
-		nameList[index] = fmt.Sprintf("%s (ratio: %.02f/%.02f)", *torrent.Name, *torrent.UploadRatio, getTorrentTargetRatio(torrent))
+		nameList[index] = fmt.Sprintf("%s (ratio: %.02f/%.02f)", *torrent.Name, *torrent.UploadRatio, *torrent.SeedRatioLimit)
 		index++
 	}
 	// Run
