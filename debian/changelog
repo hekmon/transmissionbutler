@@ -1,3 +1,7 @@
+transmissionbutler (1.7.1) jessie; urgency=medium
+  * fix notification target ratio for custom mode torrents
+ -- Edouard Hur <edouardhur@gmail.com>  Wed, 11 Jul 2019 19:54:42 +0200
+
 transmissionbutler (1.7.0) jessie; urgency=medium
   * update libs
   * show more ratio informations in notifications
