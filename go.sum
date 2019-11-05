@@ -1,0 +1,14 @@
+github.com/gregdel/pushover v0.0.0-20190217183207-15d3fef40636 h1:6agUllU8gUNAallyB+afeLXMRLL6Q1z+S6YC7Pi1EIY=
+github.com/gregdel/pushover v0.0.0-20190217183207-15d3fef40636/go.mod h1:NbuXd8Iwy5dU99qFToB8mSE29qJOQNW/bphiV8CWj/k=
+github.com/hashicorp/go-cleanhttp v0.5.1 h1:dH3aiDG9Jvb5r5+bYHsikaOUIpcM0xvgMXVoDkXMzJM=
+github.com/hashicorp/go-cleanhttp v0.5.1/go.mod h1:JpRdi6/HCYpAwUzNwuwqhbovhLtngrth3wmdIIUrZ80=
+github.com/hekmon/cunits v2.0.1+incompatible h1:yy/Wq5YvNtrweqfeRjvrvMdBMH6axBrlL8t7arLlm5A=
+github.com/hekmon/cunits v2.0.1+incompatible/go.mod h1:0QdfIGGkucx1VgStMNiHOYn84t/Ru65b+D3z1QszVPc=
+github.com/hekmon/hllogger v0.0.0-20190415142735-e033cfb0e0f4 h1:7tbBcPGdrxqIBJWjoPRxixge9pjydsyUxSQp5gF0m6o=
+github.com/hekmon/hllogger v0.0.0-20190415142735-e033cfb0e0f4/go.mod h1:+hK31X9viWJBetg4j/e0mK5aJls7DD8zZ5Uhfi0aGww=
+github.com/hekmon/pushover v0.0.0-20190417103458-e3f544249111 h1:laY1GT1pgheQ6/KSW4RRhfVXblAjoR9HGq5ETzWOa9M=
+github.com/hekmon/pushover v0.0.0-20190417103458-e3f544249111/go.mod h1:6fgJO6/KkqujVpmmNpB909GkdWI3DBDwwkwNmrB7p6U=
+github.com/hekmon/transmissionrpc v0.0.0-20190525133028-1d589625bacd h1:bZZYKxyrUV8EsKB5AjsPsJiWE7n0FDURijlSzYZVqAM=
+github.com/hekmon/transmissionrpc v0.0.0-20190525133028-1d589625bacd/go.mod h1:b1R6hlzo+gEUNWGh53mw9mPWyYyODdZu/qlVqT+W+PU=
+github.com/iguanesolutions/go-systemd v3.1.2+incompatible h1:QnNl/NC+VdploFvtuQGw0ojUr/aq09V7zkeOPbZYRfE=
+github.com/iguanesolutions/go-systemd v3.1.2+incompatible/go.mod h1:MskwCpiNIfdFBijhT66rZOSMDdv6FNG5A+eXDHWvFRc=
