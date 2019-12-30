@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hekmon/cunits"
+	"github.com/hekmon/cunits/v2"
 	"github.com/hekmon/transmissionrpc"
 )
 
