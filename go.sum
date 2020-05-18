@@ -8,7 +8,7 @@ github.com/hekmon/hllogger v1.0.0 h1:3u7SlstLAK34hOdnVzZlyhixnU78NjyIX2IMQzs9ZkE
 github.com/hekmon/hllogger v1.0.0/go.mod h1:Tc7ICZV8BTIv2lwviaawXM1KGtzxdD8BpqMhJc3ZJ64=
 github.com/hekmon/pushover v1.0.0 h1:97XCAky2Ez1OBrjTL14XNotc9GzZfxR0PFTWVtJZAz4=
 github.com/hekmon/pushover v1.0.0/go.mod h1:eniN88CKsooo3PKaXOMLQHxnf21EMc4q01xZL0UXz6I=
-github.com/hekmon/transmissionrpc v0.1.0 h1:d6Vd/OHtppF3nRVjEU124RaYhvl0/vQ8cDU/rDTdMLo=
-github.com/hekmon/transmissionrpc v0.1.0/go.mod h1:qkwhsyD/MQSlWvOE1AC92xajwEveAuGsOvTuOBZEuHc=
+github.com/hekmon/transmissionrpc v1.0.0 h1:5FPht3EfRh9T3w5M1MPLFh47qRXc7N10XI5Wu5+XOCI=
+github.com/hekmon/transmissionrpc v1.0.0/go.mod h1:qkwhsyD/MQSlWvOE1AC92xajwEveAuGsOvTuOBZEuHc=
 github.com/iguanesolutions/go-systemd v3.1.2+incompatible h1:QnNl/NC+VdploFvtuQGw0ojUr/aq09V7zkeOPbZYRfE=
 github.com/iguanesolutions/go-systemd v3.1.2+incompatible/go.mod h1:MskwCpiNIfdFBijhT66rZOSMDdv6FNG5A+eXDHWvFRc=
